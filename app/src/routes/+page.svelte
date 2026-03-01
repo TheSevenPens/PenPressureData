@@ -1,4 +1,5 @@
 <script>
+	import { base } from '$app/paths';
 	import { allSessions, byBrand, brands } from '$lib/data.js';
 
 	let selectedBrand = $state('');
@@ -61,6 +62,7 @@
 	<table>
 		<thead>
 			<tr>
+				<th></th>
 				<th>Brand</th>
 				<th>Model</th>
 				<th>Inventory ID</th>
@@ -79,6 +81,13 @@
 					class:expanded={expandedSessionId === session.sessionId}
 					onclick={() => toggleSession(session.sessionId)}
 				>
+					<td class="view-cell">
+						<a
+							href="{base}/session/{session.sessionId}"
+							class="view-btn"
+							onclick={(e) => e.stopPropagation()}
+						>View</a>
+					</td>
 					<td>{session.brand}</td>
 					<td>{session.pen}</td>
 					<td class="mono">{session.inventoryid}</td>
@@ -92,7 +101,7 @@
 
 				{#if expandedSessionId === session.sessionId}
 					<tr class="records-row">
-						<td colspan="9">
+						<td colspan="10">
 							<div class="records-wrap">
 								<table class="records-table">
 									<thead>
@@ -222,6 +231,30 @@
 	.records-table tbody td {
 		font-size: 0.8rem;
 		padding: 0.25rem 0.75rem;
+	}
+
+	.view-cell {
+		width: 1px;
+		white-space: nowrap;
+	}
+
+	.view-btn {
+		display: inline-block;
+		padding: 0.2rem 0.6rem;
+		font-size: 0.78rem;
+		font-weight: 500;
+		color: #4a6fa5;
+		border: 1px solid #c0cfe8;
+		border-radius: 4px;
+		text-decoration: none;
+		background: #f0f5ff;
+		white-space: nowrap;
+	}
+
+	.view-btn:hover {
+		background: #4a6fa5;
+		color: #fff;
+		border-color: #4a6fa5;
 	}
 
 	.mono {
