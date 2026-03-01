@@ -50,6 +50,7 @@
 					x: {
 						type: "linear",
 						min: 0,
+						max: 1000,
 						title: {
 							display: true,
 							text: "PHYSICAL (gf)",
