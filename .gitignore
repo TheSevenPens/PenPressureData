@@ -1,1 +1,6 @@
 .DS_Store
+
+# SvelteKit app
+app/node_modules
+app/.svelte-kit
+app/build

@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(cmd.exe /c \"where node && where npm\")",
+      "Bash(/c/Users/seven/AppData/Local/Programs/cursor/resources/app/bin/node:*)",
+      "Bash(powershell.exe -Command \"Get-Command node -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source; Get-Command npm -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source\")",
+      "Bash(powershell.exe -Command \"& {Get-Command node, npm -ErrorAction SilentlyContinue}\")",
+      "Bash(source:*)",
+      "Bash(conda activate:*)",
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(ls:*)",
+      "Bash(pkill:*)",
+      "Bash(cmd.exe /c \"netstat -ano | findstr :5173\")",
+      "Bash(cmd.exe /c \"netstat -ano\")",
+      "Bash(python3:*)"
+    ]
+  }
+}

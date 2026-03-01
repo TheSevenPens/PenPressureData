@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "pen-pressure-viewer",
+      "runtimeExecutable": "C:/Users/seven/miniconda3/envs/node1/node.exe",
+      "runtimeArgs": ["start-dev.mjs"],
+      "port": 5999
+    }
+  ]
+}
