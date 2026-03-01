@@ -77,7 +77,7 @@
 			</div>
 
 			<div class="chart-section">
-				<h2>Pressure Curve</h2>
+				<h2>Pressure Response</h2>
 				<PressureChart series={chartSeries} />
 			</div>
 		</div>
@@ -212,7 +212,7 @@
 
 	.records-table thead th {
 		background: #f0f0f0;
-		padding: 0.4rem 1rem;
+		padding: 0.2rem 1rem;
 		text-align: right;
 		font-weight: 600;
 		border-bottom: 2px solid #ddd;
@@ -220,7 +220,7 @@
 	}
 
 	.records-table tbody td {
-		padding: 0.3rem 1rem;
+		padding: 0.1rem 1rem;
 		border-bottom: 1px solid #eee;
 	}
 
