@@ -1,9 +1,18 @@
 <script>
 	import { base } from '$app/paths';
 	import { sessionById } from '$lib/data.js';
+	import PressureChart from '$lib/components/PressureChart.svelte';
 
 	let { data } = $props();
 	let session = $derived(sessionById[data.id]);
+
+	const COLOR = '#4a6fa5';
+
+	let chartSeries = $derived(
+		session
+			? [{ label: `${session.inventoryid} ${session.date}`, records: session.records, color: COLOR }]
+			: []
+	);
 </script>
 
 {#if session}
@@ -44,26 +53,33 @@
 			</div>
 		</div>
 
-		<div class="records-section">
-			<h2>Pressure Records</h2>
-			<table class="records-table">
-				<thead>
-					<tr>
-						<th class="num">#</th>
-						<th class="num">Physical (gf)</th>
-						<th class="num">Logical (%)</th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each session.records as [gf, pct], i}
+		<div class="body-layout">
+			<div class="records-section">
+				<h2>Pressure Records</h2>
+				<table class="records-table">
+					<thead>
 						<tr>
-							<td class="num dim">{i + 1}</td>
-							<td class="num">{gf}</td>
-							<td class="num">{Number(pct).toFixed(4)}</td>
+							<th class="num">#</th>
+							<th class="num">Physical (gf)</th>
+							<th class="num">Logical (%)</th>
 						</tr>
-					{/each}
-				</tbody>
-			</table>
+					</thead>
+					<tbody>
+						{#each session.records as [gf, pct], i}
+							<tr>
+								<td class="num dim">{i + 1}</td>
+								<td class="num">{gf}</td>
+								<td class="num">{Number(pct).toFixed(4)}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+
+			<div class="chart-section">
+				<h2>Pressure Curve</h2>
+				<PressureChart series={chartSeries} />
+			</div>
 		</div>
 	</div>
 {:else}
@@ -75,7 +91,7 @@
 
 <style>
 	.session-page {
-		max-width: 800px;
+		max-width: 1200px;
 	}
 
 	.back-link {
@@ -103,17 +119,9 @@
 		gap: 0.4rem;
 	}
 
-	.brand {
-		color: #333;
-	}
-
-	.sep {
-		color: #aaa;
-	}
-
-	.model {
-		color: #4a6fa5;
-	}
+	.brand { color: #333; }
+	.sep   { color: #aaa; }
+	.model { color: #4a6fa5; }
 
 	.session-meta-line {
 		display: flex;
@@ -167,7 +175,16 @@
 		color: #333;
 	}
 
-	.records-section h2 {
+	/* Side-by-side layout */
+	.body-layout {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: 2rem;
+		align-items: start;
+	}
+
+	.records-section h2,
+	.chart-section h2 {
 		font-size: 0.9rem;
 		font-weight: 600;
 		text-transform: uppercase;
@@ -176,10 +193,20 @@
 		margin: 0 0 0.75rem;
 	}
 
+	.chart-section {
+		min-width: 0;
+		height: 420px;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.chart-section :global(.chart-wrap) {
+		flex: 1;
+	}
+
 	.records-table {
 		border-collapse: collapse;
 		width: auto;
-		min-width: 300px;
 		font-size: 0.875rem;
 	}
 
@@ -202,13 +229,9 @@
 		font-family: monospace;
 	}
 
-	.dim {
-		color: #bbb;
-	}
+	.dim { color: #bbb; }
 
-	.not-found {
-		color: #666;
-	}
+	.not-found { color: #666; }
 
 	.not-found code {
 		background: #f0f0f0;
