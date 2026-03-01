@@ -19,14 +19,17 @@
 		Legend,
 	);
 
-	/** @type {{ series: Array<{ label: string, records: Array<[number, number]>, color: string }> }} */
-	let { series } = $props();
+	/** @type {{ series: Array<{ label: string, records: Array<[number, number]>, color: string }>, zoomIAF?: boolean }} */
+	let { series, zoomIAF = false } = $props();
 
 	let canvas;
 	let chart;
 
 	function buildChart() {
 		if (chart) chart.destroy();
+
+		const xMax = zoomIAF ? 20 : 1000;
+		const yMax = zoomIAF ? 10 : 100;
 
 		chart = new Chart(canvas, {
 			type: "scatter",
@@ -50,7 +53,7 @@
 					x: {
 						type: "linear",
 						min: 0,
-						max: 1000,
+						max: xMax,
 						title: {
 							display: true,
 							text: "PHYSICAL (gf)",
@@ -65,7 +68,7 @@
 					y: {
 						type: "linear",
 						min: 0,
-						max: 100,
+						max: yMax,
 						title: {
 							display: true,
 							text: "LOGICAL (%)",
@@ -102,8 +105,9 @@
 	});
 
 	$effect(() => {
-		// Rebuild when series data changes
+		// Rebuild when series or zoom changes
 		series;
+		zoomIAF;
 		if (canvas) buildChart();
 	});
 </script>

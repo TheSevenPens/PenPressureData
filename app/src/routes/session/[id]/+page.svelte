@@ -8,6 +8,8 @@
 
 	const COLOR = "#4a6fa5";
 
+	let zoomIAF = $state(false);
+
 	let chartSeries = $derived(
 		session
 			? [
@@ -83,8 +85,14 @@
 			</div>
 
 			<div class="chart-section">
-				<h2>Pressure Response</h2>
-				<PressureChart series={chartSeries} />
+				<div class="chart-header">
+					<h2>Pressure Response</h2>
+					<label class="zoom-label">
+						<input type="checkbox" bind:checked={zoomIAF} />
+						Zoom to IAF
+					</label>
+				</div>
+				<PressureChart series={chartSeries} {zoomIAF} />
 			</div>
 		</div>
 	</div>
@@ -195,14 +203,36 @@
 		align-items: start;
 	}
 
+	.chart-header {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		margin-bottom: 0.75rem;
+	}
+
 	.records-section h2,
-	.chart-section h2 {
+	.chart-header h2 {
 		font-size: 0.9rem;
 		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.5px;
 		color: #888;
-		margin: 0 0 0.75rem;
+		margin: 0;
+	}
+
+	.zoom-label {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+		font-size: 0.8rem;
+		color: #666;
+		cursor: pointer;
+		user-select: none;
+		white-space: nowrap;
+	}
+
+	.zoom-label input {
+		cursor: pointer;
 	}
 
 	.chart-section {
