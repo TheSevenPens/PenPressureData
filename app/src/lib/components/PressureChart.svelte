@@ -1,5 +1,5 @@
 <script>
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy } from "svelte";
 	import {
 		Chart,
 		ScatterController,
@@ -7,10 +7,17 @@
 		PointElement,
 		LineElement,
 		Tooltip,
-		Legend
-	} from 'chart.js';
+		Legend,
+	} from "chart.js";
 
-	Chart.register(ScatterController, LinearScale, PointElement, LineElement, Tooltip, Legend);
+	Chart.register(
+		ScatterController,
+		LinearScale,
+		PointElement,
+		LineElement,
+		Tooltip,
+		Legend,
+	);
 
 	/** @type {{ series: Array<{ label: string, records: Array<[number, number]>, color: string }> }} */
 	let { series } = $props();
@@ -22,7 +29,7 @@
 		if (chart) chart.destroy();
 
 		chart = new Chart(canvas, {
-			type: 'scatter',
+			type: "scatter",
 			data: {
 				datasets: series.map((s) => ({
 					label: s.label,
@@ -30,58 +37,68 @@
 					showLine: true,
 					tension: 0,
 					borderColor: s.color,
-					backgroundColor: s.color + '33',
+					backgroundColor: s.color + "33",
 					borderWidth: 2,
 					pointRadius: 3,
-					pointHoverRadius: 5
-				}))
+					pointHoverRadius: 5,
+				})),
 			},
 			options: {
 				responsive: true,
 				maintainAspectRatio: false,
 				scales: {
 					x: {
-						type: 'linear',
+						type: "linear",
 						min: 0,
 						title: {
 							display: true,
-							text: 'Physical Pressure (gf)',
-							font: { family: "'Google Sans Flex', sans-serif", size: 12 }
+							text: "PHYSICAL (gf)",
+							font: {
+								family: "'Google Sans Flex', sans-serif",
+								size: 12,
+							},
 						},
-						ticks: { font: { family: 'monospace' } },
-						grid: { color: '#e8e8e8' }
+						ticks: { font: { family: "monospace" } },
+						grid: { color: "#e8e8e8" },
 					},
 					y: {
-						type: 'linear',
+						type: "linear",
 						min: 0,
 						max: 100,
 						title: {
 							display: true,
-							text: 'Logical Pressure (%)',
-							font: { family: "'Google Sans Flex', sans-serif", size: 12 }
+							text: "LOGICAL (%)",
+							font: {
+								family: "'Google Sans Flex', sans-serif",
+								size: 12,
+							},
 						},
-						ticks: { font: { family: 'monospace' } },
-						grid: { color: '#e8e8e8' }
-					}
+						ticks: { font: { family: "monospace" } },
+						grid: { color: "#e8e8e8" },
+					},
 				},
 				plugins: {
 					legend: {
 						display: series.length > 1,
-						labels: { font: { family: "'Google Sans Flex', sans-serif" } }
+						labels: {
+							font: { family: "'Google Sans Flex', sans-serif" },
+						},
 					},
 					tooltip: {
 						callbacks: {
 							label: (ctx) =>
-								`${ctx.dataset.label}: ${ctx.parsed.x} gf → ${Number(ctx.parsed.y).toFixed(4)}%`
-						}
-					}
-				}
-			}
+								`${ctx.dataset.label}: ${ctx.parsed.x} gf → ${Number(ctx.parsed.y).toFixed(4)}%`,
+						},
+					},
+				},
+			},
 		});
 	}
 
 	onMount(() => buildChart());
-	onDestroy(() => { if (chart) chart.destroy(); });
+	onDestroy(() => {
+		if (chart) chart.destroy();
+	});
 
 	$effect(() => {
 		// Rebuild when series data changes

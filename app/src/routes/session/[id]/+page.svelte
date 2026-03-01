@@ -1,17 +1,23 @@
 <script>
-	import { base } from '$app/paths';
-	import { sessionById } from '$lib/data.js';
-	import PressureChart from '$lib/components/PressureChart.svelte';
+	import { base } from "$app/paths";
+	import { sessionById } from "$lib/data.js";
+	import PressureChart from "$lib/components/PressureChart.svelte";
 
 	let { data } = $props();
 	let session = $derived(sessionById[data.id]);
 
-	const COLOR = '#4a6fa5';
+	const COLOR = "#4a6fa5";
 
 	let chartSeries = $derived(
 		session
-			? [{ label: `${session.inventoryid} ${session.date}`, records: session.records, color: COLOR }]
-			: []
+			? [
+					{
+						label: `${session.inventoryid} ${session.date}`,
+						records: session.records,
+						color: COLOR,
+					},
+				]
+			: [],
 	);
 </script>
 
@@ -55,7 +61,7 @@
 
 		<div class="body-layout">
 			<div class="records-section">
-				<h2>Pressure Records</h2>
+				<h2>Data</h2>
 				<table class="records-table">
 					<thead>
 						<tr>
@@ -119,9 +125,15 @@
 		gap: 0.4rem;
 	}
 
-	.brand { color: #333; }
-	.sep   { color: #aaa; }
-	.model { color: #4a6fa5; }
+	.brand {
+		color: #333;
+	}
+	.sep {
+		color: #aaa;
+	}
+	.model {
+		color: #4a6fa5;
+	}
 
 	.session-meta-line {
 		display: flex;
@@ -229,9 +241,13 @@
 		font-family: monospace;
 	}
 
-	.dim { color: #bbb; }
+	.dim {
+		color: #bbb;
+	}
 
-	.not-found { color: #666; }
+	.not-found {
+		color: #666;
+	}
 
 	.not-found code {
 		background: #f0f0f0;
