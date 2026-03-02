@@ -27,7 +27,7 @@
 
 	function getAxisLimits() {
 		if (zoomMode === "iaf") {
-			return { xMin: 0, xMax: 20, yMin: 0, yMax: 10 };
+			return { xMin: 0, xMax: 20, yMin: 0, yMax: 5 };
 		}
 		if (zoomMode === "maxpressure") {
 			const allRecords = series.flatMap((s) => s.records);
