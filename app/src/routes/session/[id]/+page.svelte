@@ -2,6 +2,7 @@
 	import { base } from "$app/paths";
 	import { allSessions, sessionById } from "$lib/data.js";
 	import PressureChart from "$lib/components/PressureChart.svelte";
+	import RecordsTable from "$lib/components/RecordsTable.svelte";
 
 	let { data } = $props();
 	let session = $derived(sessionById[data.id]);
@@ -89,24 +90,7 @@
 		<div class="body-layout">
 			<div class="records-section">
 				<h2>Data</h2>
-				<table class="records-table">
-					<thead>
-						<tr>
-							<th class="num">#</th>
-							<th class="num">Physical (gf)</th>
-							<th class="num">Logical (%)</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each session.records as [gf, pct], i}
-							<tr>
-								<td class="num dim">{i + 1}</td>
-								<td class="num">{gf}</td>
-								<td class="num">{Number(pct).toFixed(4)}</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
+				<RecordsTable records={session.records} />
 			</div>
 
 			<div class="chart-section">
@@ -296,35 +280,6 @@
 
 	.chart-section :global(.chart-wrap) {
 		flex: 1;
-	}
-
-	.records-table {
-		border-collapse: collapse;
-		width: auto;
-		font-size: 0.875rem;
-	}
-
-	.records-table thead th {
-		background: #f0f0f0;
-		padding: 0.2rem 1rem;
-		text-align: right;
-		font-weight: 600;
-		border-bottom: 2px solid #ddd;
-		white-space: nowrap;
-	}
-
-	.records-table tbody td {
-		padding: 0.1rem 1rem;
-		border-bottom: 1px solid #eee;
-	}
-
-	.num {
-		text-align: right;
-		font-family: monospace;
-	}
-
-	.dim {
-		color: #bbb;
 	}
 
 	.not-found {
