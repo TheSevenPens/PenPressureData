@@ -21,6 +21,42 @@ export function interpolatePhysical(records, targetLogical) {
 }
 
 /**
+ * Estimate the physical pressure at which logical pressure first rises from 0%
+ * (i.e. the Initial Activation Force / P00).
+ *
+ * Uses a simple linear extrapolation from the first two measured data points
+ * back to y = 0. This is appropriate because P00 physically cannot be far
+ * from the first measured pressure — a complex model would over-extrapolate.
+ *
+ * Returns 0 if the result is negative, or the first measured x if the
+ * extrapolation overshoots in the wrong direction.
+ *
+ * @param {Array<[number, number]>} records
+ * @returns {number|null}
+ */
+export function estimateP00(records) {
+	// If the first point is already at y=0, return it directly.
+	if (records[0][1] <= 0) return records[0][0];
+	if (records.length < 2) return null;
+
+	const [x0, y0] = records[0];
+	const [x1, y1] = records[1];
+
+	// Need a positive slope to extrapolate back to zero.
+	const slope = (y1 - y0) / (x1 - x0);
+	if (slope <= 0) return null;
+
+	// Linear extrapolation to y = 0: x = x0 - y0 / slope
+	const p00 = x0 - y0 / slope;
+
+	// Clamp: activation force can't be negative, and can't exceed first measured x.
+	if (p00 < 0) return 0;
+	if (p00 >= x0) return x0;
+
+	return p00;
+}
+
+/**
  * Estimate the physical pressure at which logical pressure reaches 100%,
  * by fitting an exponential decay to the "remaining" logical pressure (100 - y)
  * using only the last 5 data points. This captures the LOCAL curvature at the
@@ -29,8 +65,6 @@ export function interpolatePhysical(records, targetLogical) {
  *
  * Model: ln(100 - y) = a + b·x  (b must be negative — curve converges)
  * P100 is defined as x where remaining drops to 0.5% (i.e. y = 99.5%).
- * Using 0.5% rather than a near-zero threshold avoids runaway extrapolation
- * for curves that are still far from 100% at the end of the measurement range.
  *
  * Returns null if the fit is unreliable or extrapolation is excessive.
  *

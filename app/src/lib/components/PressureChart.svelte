@@ -19,7 +19,7 @@
 		Legend,
 	);
 
-	/** @type {{ series: Array<{ label: string, records: Array<[number, number]>, color: string, p100?: number|null }>, zoomMode?: string }} */
+	/** @type {{ series: Array<{ label: string, records: Array<[number, number]>, color: string, p00?: number|null, p100?: number|null }>, zoomMode?: string }} */
 	let { series, zoomMode = 'normal' } = $props();
 
 	let canvas;
@@ -32,10 +32,8 @@
 		if (zoomMode === 'maxpressure') {
 			const allRecords = series.flatMap(s => s.records);
 			const maxX = Math.max(...allRecords.map(([x]) => x));
-			// Start x-axis where data first enters the 95%+ y-range (minus a small buffer)
 			const highPressureX = allRecords.filter(([, y]) => y >= 95).map(([x]) => x);
 			const minHighX = highPressureX.length > 0 ? Math.min(...highPressureX) : 0;
-			// Extend xMax to show P100 extrapolation endpoints if they exist
 			const p100Values = series.map(s => s.p100).filter(v => v != null);
 			const maxP100 = p100Values.length > 0 ? Math.max(...p100Values) : 0;
 			const xMax = Math.max(maxX + 100, maxP100 + 50);
@@ -67,11 +65,31 @@
 				pointHoverRadius: 5,
 			});
 
-			// Dotted extrapolation line from last measured point to P100
+			// Dotted extrapolation line from P00 (y=0) to first measured point
+			if (s.p00 != null && s.records.length > 0) {
+				const [firstX, firstY] = s.records[0];
+				datasets.push({
+					label: `${s.label}_p00_extrap`,
+					data: [{ x: s.p00, y: 0 }, { x: firstX, y: firstY }],
+					showLine: true,
+					tension: 0,
+					borderColor: s.color,
+					backgroundColor: 'transparent',
+					borderWidth: 1.5,
+					borderDash: [2, 4],
+					pointRadius: [4, 0],
+					pointHoverRadius: [5, 0],
+					pointStyle: ['crossRot', ''],
+					pointBorderColor: s.color,
+					pointBackgroundColor: 'white',
+				});
+			}
+
+			// Dotted extrapolation line from last measured point to P100 (y=100)
 			if (s.p100 != null && s.records.length > 0) {
 				const [lastX, lastY] = s.records[s.records.length - 1];
 				datasets.push({
-					label: `${s.label}_extrap`,
+					label: `${s.label}_p100_extrap`,
 					data: [{ x: lastX, y: lastY }, { x: s.p100, y: 100 }],
 					showLine: true,
 					tension: 0,
@@ -133,7 +151,7 @@
 				plugins: {
 					legend: { display: false },
 					tooltip: {
-						filter: (item) => !item.dataset.label.endsWith('_extrap'),
+						filter: (item) => !item.dataset.label.includes('_extrap'),
 						callbacks: {
 							label: (ctx) =>
 								`${ctx.dataset.label}: ${ctx.parsed.x} gf → ${Number(ctx.parsed.y).toFixed(4)}%`,
