@@ -2,7 +2,7 @@
 	import { base } from '$app/paths';
 	import { allSessions } from '$lib/data.js';
 	import PressureChart from '$lib/components/PressureChart.svelte';
-	import { interpolatePhysical, fmtP } from '$lib/interpolate.js';
+	import { interpolatePhysical, estimateP100, fmtP } from '$lib/interpolate.js';
 
 	const COLORS = [
 		'#4a6fa5', '#e94560', '#2ecc71', '#f39c12', '#9b59b6',
@@ -23,9 +23,14 @@
 			records: s.records,
 			color: COLORS[i % COLORS.length],
 			date: s.date,
-			p25: interpolatePhysical(s.records, 25),
-			p50: interpolatePhysical(s.records, 50),
-			p75: interpolatePhysical(s.records, 75),
+			p05:  interpolatePhysical(s.records, 5),
+			p10:  interpolatePhysical(s.records, 10),
+			p25:  interpolatePhysical(s.records, 25),
+			p50:  interpolatePhysical(s.records, 50),
+			p75:  interpolatePhysical(s.records, 75),
+			p95:  interpolatePhysical(s.records, 95),
+			p99:  interpolatePhysical(s.records, 99),
+			p100: estimateP100(s.records),
 		}))
 	);
 
@@ -77,9 +82,14 @@
 					<tr>
 						<th></th>
 						<th>Date</th>
+						<th class="right">P05 (gf)</th>
+						<th class="right">P10 (gf)</th>
 						<th class="right">P25 (gf)</th>
 						<th class="right">P50 (gf)</th>
 						<th class="right">P75 (gf)</th>
+						<th class="right">P95 (gf)</th>
+						<th class="right">P99 (gf)</th>
+						<th class="right">P100 (gf)</th>
 						<th class="centered">Show</th>
 					</tr>
 				</thead>
@@ -88,9 +98,14 @@
 						<tr class:dimmed={hiddenLabels.has(s.label)}>
 							<td><span class="swatch" style="background: {s.color}"></span></td>
 							<td class="mono">{s.date}</td>
+							<td class="mono right">{fmtP(s.p05)}</td>
+							<td class="mono right">{fmtP(s.p10)}</td>
 							<td class="mono right">{fmtP(s.p25)}</td>
 							<td class="mono right">{fmtP(s.p50)}</td>
 							<td class="mono right">{fmtP(s.p75)}</td>
+							<td class="mono right">{fmtP(s.p95)}</td>
+							<td class="mono right">{fmtP(s.p99)}</td>
+							<td class="mono right">{fmtP(s.p100)}</td>
 							<td class="centered">
 								<input
 									type="checkbox"

@@ -19,7 +19,7 @@
 		Legend,
 	);
 
-	/** @type {{ series: Array<{ label: string, records: Array<[number, number]>, color: string }>, zoomMode?: string }} */
+	/** @type {{ series: Array<{ label: string, records: Array<[number, number]>, color: string, p100?: number|null }>, zoomMode?: string }} */
 	let { series, zoomMode = 'normal' } = $props();
 
 	let canvas;
@@ -35,7 +35,11 @@
 			// Start x-axis where data first enters the 95%+ y-range (minus a small buffer)
 			const highPressureX = allRecords.filter(([, y]) => y >= 95).map(([x]) => x);
 			const minHighX = highPressureX.length > 0 ? Math.min(...highPressureX) : 0;
-			return { xMin: Math.max(0, minHighX - 20), xMax: maxX + 100, yMin: 95, yMax: 100 };
+			// Extend xMax to show P100 extrapolation endpoints if they exist
+			const p100Values = series.map(s => s.p100).filter(v => v != null);
+			const maxP100 = p100Values.length > 0 ? Math.max(...p100Values) : 0;
+			const xMax = Math.max(maxX + 100, maxP100 + 50);
+			return { xMin: Math.max(0, minHighX - 20), xMax, yMin: 95, yMax: 100 };
 		}
 		// normal
 		return { xMin: 0, xMax: 1000, yMin: 0, yMax: 100 };
@@ -47,63 +51,89 @@
 		const { xMin, xMax, yMin, yMax } = getAxisLimits();
 		const isIAF = zoomMode === 'iaf';
 
-		chart = new Chart(canvas, {
-			type: "scatter",
-			data: {
-				datasets: series.map((s) => ({
-					label: s.label,
-					data: s.records.map(([x, y]) => ({ x, y })),
+		const datasets = [];
+
+		for (const s of series) {
+			// Main measured data line
+			datasets.push({
+				label: s.label,
+				data: s.records.map(([x, y]) => ({ x, y })),
+				showLine: true,
+				tension: 0,
+				borderColor: s.color,
+				backgroundColor: s.color + '33',
+				borderWidth: 2,
+				pointRadius: 3,
+				pointHoverRadius: 5,
+			});
+
+			// Dotted extrapolation line from last measured point to P100
+			if (s.p100 != null && s.records.length > 0) {
+				const [lastX, lastY] = s.records[s.records.length - 1];
+				datasets.push({
+					label: `${s.label}_extrap`,
+					data: [{ x: lastX, y: lastY }, { x: s.p100, y: 100 }],
 					showLine: true,
 					tension: 0,
 					borderColor: s.color,
-					backgroundColor: s.color + "33",
-					borderWidth: 2,
-					pointRadius: 3,
-					pointHoverRadius: 5,
-				})),
-			},
+					backgroundColor: 'transparent',
+					borderWidth: 1.5,
+					borderDash: [2, 4],
+					pointRadius: [0, 4],
+					pointHoverRadius: [0, 5],
+					pointStyle: ['', 'crossRot'],
+					pointBorderColor: s.color,
+					pointBackgroundColor: 'white',
+				});
+			}
+		}
+
+		chart = new Chart(canvas, {
+			type: 'scatter',
+			data: { datasets },
 			options: {
 				responsive: true,
 				maintainAspectRatio: false,
 				scales: {
 					x: {
-						type: "linear",
+						type: 'linear',
 						min: xMin,
 						max: xMax,
 						title: {
 							display: true,
-							text: "PHYSICAL (gf)",
+							text: 'PHYSICAL (gf)',
 							font: {
 								family: "'Google Sans Flex', sans-serif",
 								size: 12,
 							},
 						},
 						ticks: {
-							font: { family: "monospace" },
+							font: { family: 'monospace' },
 							stepSize: isIAF ? 1 : undefined,
 							autoSkip: !isIAF,
 						},
-						grid: { color: "#e8e8e8" },
+						grid: { color: '#e8e8e8' },
 					},
 					y: {
-						type: "linear",
+						type: 'linear',
 						min: yMin,
 						max: yMax,
 						title: {
 							display: true,
-							text: "LOGICAL (%)",
+							text: 'LOGICAL (%)',
 							font: {
 								family: "'Google Sans Flex', sans-serif",
 								size: 12,
 							},
 						},
-						ticks: { font: { family: "monospace" } },
-						grid: { color: "#e8e8e8" },
+						ticks: { font: { family: 'monospace' } },
+						grid: { color: '#e8e8e8' },
 					},
 				},
 				plugins: {
 					legend: { display: false },
 					tooltip: {
+						filter: (item) => !item.dataset.label.endsWith('_extrap'),
 						callbacks: {
 							label: (ctx) =>
 								`${ctx.dataset.label}: ${ctx.parsed.x} gf → ${Number(ctx.parsed.y).toFixed(4)}%`,

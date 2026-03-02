@@ -21,6 +21,73 @@ export function interpolatePhysical(records, targetLogical) {
 }
 
 /**
+ * Estimate the physical pressure at which logical pressure reaches 100%,
+ * by fitting an exponential decay to the "remaining" logical pressure (100 - y)
+ * using only the last 5 data points. This captures the LOCAL curvature at the
+ * top of the curve rather than the average behaviour across the full top quarter,
+ * which would produce a shallower (too slow) decay and an overly high estimate.
+ *
+ * Model: ln(100 - y) = a + b·x  (b must be negative — curve converges)
+ * P100 is defined as x where remaining drops to 0.5% (i.e. y = 99.5%).
+ * Using 0.5% rather than a near-zero threshold avoids runaway extrapolation
+ * for curves that are still far from 100% at the end of the measurement range.
+ *
+ * Returns null if the fit is unreliable or extrapolation is excessive.
+ *
+ * @param {Array<[number, number]>} records
+ * @returns {number|null}
+ */
+export function estimateP100(records) {
+	// If any measurement already hits 100%, return that x.
+	for (const [x, y] of records) {
+		if (y >= 100) return x;
+	}
+
+	// Use only the last 5 points — local behaviour is what matters for extrapolation.
+	const top = records.slice(-5);
+	if (top.length < 2) return null;
+
+	// Build (x, ln(100 - y)) pairs; skip any points where remaining ≤ 0.
+	const pts = [];
+	for (const [x, y] of top) {
+		const rem = 100 - y;
+		if (rem <= 0) continue;
+		pts.push([x, Math.log(rem)]);
+	}
+	if (pts.length < 2) return null;
+
+	// Least-squares fit: ln(rem) = a + b·x
+	const n = pts.length;
+	const sumX  = pts.reduce((s, [x])    => s + x,     0);
+	const sumZ  = pts.reduce((s, [, z])  => s + z,     0);
+	const sumXZ = pts.reduce((s, [x, z]) => s + x * z, 0);
+	const sumX2 = pts.reduce((s, [x])    => s + x * x, 0);
+
+	const denom = n * sumX2 - sumX * sumX;
+	if (Math.abs(denom) < 1e-10) return null;
+
+	const b = (n * sumXZ - sumX * sumZ) / denom;
+	const a = (sumZ - b * sumX) / n;
+
+	// b must be negative for the model to converge toward 100%.
+	if (b >= 0) return null;
+
+	// Solve for x where remaining = 0.5% (y = 99.5%).
+	const THRESHOLD = 0.5;
+	const p100 = (Math.log(THRESHOLD) - a) / b;
+
+	const maxMeasuredX = records[records.length - 1][0];
+
+	// If the last measured point already exceeds the threshold, cap at that x.
+	if (p100 <= maxMeasuredX) return maxMeasuredX;
+
+	// Reject if extrapolation is implausibly large (> 4× max measured pressure).
+	if (p100 > maxMeasuredX * 4) return null;
+
+	return p100;
+}
+
+/**
  * Format an interpolated physical value for display (1 decimal place), or "—" if null.
  * @param {number|null} val
  * @returns {string}
