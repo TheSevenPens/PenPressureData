@@ -1,6 +1,6 @@
 <script>
 	import { base } from "$app/paths";
-	import { sessionById } from "$lib/data.js";
+	import { allSessions, sessionById } from "$lib/data.js";
 	import PressureChart from "$lib/components/PressureChart.svelte";
 
 	let { data } = $props();
@@ -9,6 +9,13 @@
 	const COLOR = "#4a6fa5";
 
 	let zoom = $state('normal');
+
+	// --- Session navigation ---
+	let sessionIndex = $derived(
+		allSessions.findIndex(s => s.sessionId === data.id)
+	);
+	let prevSession = $derived(sessionIndex > 0 ? allSessions[sessionIndex - 1] : null);
+	let nextSession = $derived(sessionIndex < allSessions.length - 1 ? allSessions[sessionIndex + 1] : null);
 
 	let chartSeries = $derived(
 		session
@@ -26,6 +33,24 @@
 {#if session}
 	<div class="session-page">
 		<a href="{base}/" class="back-link">← Back to sessions</a>
+
+		<div class="nav-strip">
+			{#if prevSession}
+				<a href="{base}/session/{prevSession.sessionId}" class="nav-btn">
+					← {prevSession.inventoryid} · {prevSession.date}
+				</a>
+			{:else}
+				<span class="nav-btn faded">← First</span>
+			{/if}
+			<span class="nav-counter">{sessionIndex + 1} / {allSessions.length}</span>
+			{#if nextSession}
+				<a href="{base}/session/{nextSession.sessionId}" class="nav-btn">
+					{nextSession.inventoryid} · {nextSession.date} →
+				</a>
+			{:else}
+				<span class="nav-btn faded">Last →</span>
+			{/if}
+		</div>
 
 		<div class="session-header">
 			<div class="session-title">
@@ -111,7 +136,7 @@
 
 	.back-link {
 		display: inline-block;
-		margin-bottom: 1.25rem;
+		margin-bottom: 0.6rem;
 		font-size: 0.875rem;
 		color: #4a6fa5;
 		text-decoration: none;
@@ -119,6 +144,38 @@
 
 	.back-link:hover {
 		text-decoration: underline;
+	}
+
+	.nav-strip {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 1.25rem;
+		gap: 0.5rem;
+	}
+
+	.nav-btn {
+		display: inline-block;
+		font-size: 0.8rem;
+		padding: 0.25rem 0.6rem;
+		border-radius: 4px;
+		border: 1px solid #ddd;
+		background: #f8f8f8;
+		color: #4a6fa5;
+		text-decoration: none;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		max-width: 280px;
+	}
+	.nav-btn:hover { background: #eef2f8; border-color: #b0c4de; }
+	.nav-btn.faded { color: #ccc; pointer-events: none; }
+
+	.nav-counter {
+		font-size: 0.75rem;
+		color: #aaa;
+		white-space: nowrap;
+		flex-shrink: 0;
 	}
 
 	.session-header {

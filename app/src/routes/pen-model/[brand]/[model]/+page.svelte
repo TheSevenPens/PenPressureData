@@ -11,6 +11,27 @@
 
 	let { data } = $props();
 
+	// --- Model navigation ---
+	const allModels = (() => {
+		const seen = new Set();
+		const models = [];
+		for (const s of allSessions) {
+			const key = `${s.brand}|||${s.pen}`;
+			if (!seen.has(key)) {
+				seen.add(key);
+				models.push({ brand: s.brand, model: s.pen });
+			}
+		}
+		return models;
+	})();
+
+	let modelIndex = $derived(
+		allModels.findIndex(m => m.brand === data.brand && m.model === data.model)
+	);
+	let prevModel = $derived(modelIndex > 0 ? allModels[modelIndex - 1] : null);
+	let nextModel = $derived(modelIndex < allModels.length - 1 ? allModels[modelIndex + 1] : null);
+
+	// --- Page data ---
 	let sessions = $derived(
 		allSessions.filter(s => s.brand === data.brand && s.pen === data.model)
 	);
@@ -66,6 +87,24 @@
 {#if sessions.length > 0}
 	<div class="model-page">
 		<a href="{base}/pen-model" class="back-link">← Back to pen models</a>
+
+		<div class="nav-strip">
+			{#if prevModel}
+				<a href="{base}/pen-model/{encodeURIComponent(prevModel.brand)}/{encodeURIComponent(prevModel.model)}" class="nav-btn">
+					← {prevModel.brand} / {prevModel.model}
+				</a>
+			{:else}
+				<span class="nav-btn faded">← First</span>
+			{/if}
+			<span class="nav-counter">{modelIndex + 1} / {allModels.length}</span>
+			{#if nextModel}
+				<a href="{base}/pen-model/{encodeURIComponent(nextModel.brand)}/{encodeURIComponent(nextModel.model)}" class="nav-btn">
+					{nextModel.brand} / {nextModel.model} →
+				</a>
+			{:else}
+				<span class="nav-btn faded">Last →</span>
+			{/if}
+		</div>
 
 		<div class="model-header">
 			<div class="model-title">
@@ -152,12 +191,44 @@
 
 	.back-link {
 		display: inline-block;
-		margin-bottom: 1.25rem;
+		margin-bottom: 0.6rem;
 		font-size: 0.875rem;
 		color: #4a6fa5;
 		text-decoration: none;
 	}
 	.back-link:hover { text-decoration: underline; }
+
+	.nav-strip {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 1.25rem;
+		gap: 0.5rem;
+	}
+
+	.nav-btn {
+		display: inline-block;
+		font-size: 0.8rem;
+		padding: 0.25rem 0.6rem;
+		border-radius: 4px;
+		border: 1px solid #ddd;
+		background: #f8f8f8;
+		color: #4a6fa5;
+		text-decoration: none;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		max-width: 280px;
+	}
+	.nav-btn:hover { background: #eef2f8; border-color: #b0c4de; }
+	.nav-btn.faded { color: #ccc; pointer-events: none; }
+
+	.nav-counter {
+		font-size: 0.75rem;
+		color: #aaa;
+		white-space: nowrap;
+		flex-shrink: 0;
+	}
 
 	.model-header { margin-bottom: 1.5rem; }
 
