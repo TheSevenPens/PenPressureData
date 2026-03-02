@@ -14,13 +14,21 @@
 		allSessions.filter(s => s.brand === data.brand && s.pen === data.model)
 	);
 
-	let chartSeries = $derived(
-		sessions.map((s, i) => ({
+	let chartSeries = $derived((() => {
+		// Assign a stable color per unique inventoryid
+		const colorMap = {};
+		let colorIndex = 0;
+		for (const s of sessions) {
+			if (!(s.inventoryid in colorMap)) {
+				colorMap[s.inventoryid] = COLORS[colorIndex++ % COLORS.length];
+			}
+		}
+		return sessions.map((s) => ({
 			label: `${s.inventoryid} ${s.date}`,
 			records: s.records,
-			color: COLORS[i % COLORS.length],
-		}))
-	);
+			color: colorMap[s.inventoryid],
+		}));
+	})());
 
 	let zoomIAF = $state(false);
 </script>
