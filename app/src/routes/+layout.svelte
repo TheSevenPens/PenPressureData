@@ -5,9 +5,9 @@
 	let { children } = $props();
 
 	const tabs = [
-		{ label: 'Sessions', href: `${base}/` },
+		{ label: 'Pen Models', href: `${base}/pen-model` },
 		{ label: 'Pens', href: `${base}/pens` },
-		{ label: 'Pen Model', href: `${base}/pen-model` },
+		{ label: 'Sessions', href: `${base}/` },
 	];
 
 	function isActive(href) {

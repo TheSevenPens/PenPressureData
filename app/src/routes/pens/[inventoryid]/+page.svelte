@@ -36,7 +36,8 @@
 
 	let visibleSeries = $derived(allSeries.filter(s => !hiddenLabels.has(s.label)));
 
-	let zoomIAF = $state(false);
+	let zoom = $state('normal');
+	let zoomIAF = $derived(zoom === 'iaf');
 </script>
 
 {#if pen}
@@ -58,10 +59,10 @@
 		<div class="chart-area">
 			<div class="chart-header">
 				<h2>Pressure Response</h2>
-				<label class="zoom-label">
-					<input type="checkbox" bind:checked={zoomIAF} />
-					Zoom to IAF
-				</label>
+				<select class="zoom-select" bind:value={zoom}>
+					<option value="normal">Normal zoom</option>
+					<option value="iaf">Zoom to IAF</option>
+				</select>
 			</div>
 			<PressureChart series={visibleSeries} {zoomIAF} />
 		</div>
@@ -180,18 +181,12 @@
 		margin: 0;
 	}
 
-	.zoom-label {
-		display: flex;
-		align-items: center;
-		gap: 0.35rem;
+	.zoom-select {
 		font-size: 0.8rem;
-		color: #666;
-		cursor: pointer;
-		user-select: none;
-		white-space: nowrap;
-	}
-
-	.zoom-label input {
+		color: #444;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+		padding: 0.2rem 0.4rem;
 		cursor: pointer;
 	}
 
