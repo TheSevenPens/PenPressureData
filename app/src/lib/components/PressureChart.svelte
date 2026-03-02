@@ -19,17 +19,33 @@
 		Legend,
 	);
 
-	/** @type {{ series: Array<{ label: string, records: Array<[number, number]>, color: string }>, zoomIAF?: boolean }} */
-	let { series, zoomIAF = false } = $props();
+	/** @type {{ series: Array<{ label: string, records: Array<[number, number]>, color: string }>, zoomMode?: string }} */
+	let { series, zoomMode = 'normal' } = $props();
 
 	let canvas;
 	let chart;
 
+	function getAxisLimits() {
+		if (zoomMode === 'iaf') {
+			return { xMin: 0, xMax: 20, yMin: 0, yMax: 10 };
+		}
+		if (zoomMode === 'maxpressure') {
+			const allRecords = series.flatMap(s => s.records);
+			const maxX = Math.max(...allRecords.map(([x]) => x));
+			// Start x-axis where data first enters the 90%+ y-range (minus a small buffer)
+			const highPressureX = allRecords.filter(([, y]) => y >= 90).map(([x]) => x);
+			const minHighX = highPressureX.length > 0 ? Math.min(...highPressureX) : 0;
+			return { xMin: Math.max(0, minHighX - 20), xMax: maxX + 100, yMin: 90, yMax: 100 };
+		}
+		// normal
+		return { xMin: 0, xMax: 1000, yMin: 0, yMax: 100 };
+	}
+
 	function buildChart() {
 		if (chart) chart.destroy();
 
-		const xMax = zoomIAF ? 20 : 1000;
-		const yMax = zoomIAF ? 10 : 100;
+		const { xMin, xMax, yMin, yMax } = getAxisLimits();
+		const isIAF = zoomMode === 'iaf';
 
 		chart = new Chart(canvas, {
 			type: "scatter",
@@ -52,7 +68,7 @@
 				scales: {
 					x: {
 						type: "linear",
-						min: 0,
+						min: xMin,
 						max: xMax,
 						title: {
 							display: true,
@@ -64,14 +80,14 @@
 						},
 						ticks: {
 							font: { family: "monospace" },
-							stepSize: zoomIAF ? 1 : undefined,
-							autoSkip: !zoomIAF,
+							stepSize: isIAF ? 1 : undefined,
+							autoSkip: !isIAF,
 						},
 						grid: { color: "#e8e8e8" },
 					},
 					y: {
 						type: "linear",
-						min: 0,
+						min: yMin,
 						max: yMax,
 						title: {
 							display: true,
@@ -105,7 +121,7 @@
 
 	$effect(() => {
 		series;
-		zoomIAF;
+		zoomMode;
 		if (canvas) buildChart();
 	});
 </script>

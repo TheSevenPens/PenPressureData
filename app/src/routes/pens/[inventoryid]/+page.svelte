@@ -37,7 +37,6 @@
 	let visibleSeries = $derived(allSeries.filter(s => !hiddenLabels.has(s.label)));
 
 	let zoom = $state('normal');
-	let zoomIAF = $derived(zoom === 'iaf');
 </script>
 
 {#if pen}
@@ -62,9 +61,10 @@
 				<select class="zoom-select" bind:value={zoom}>
 					<option value="normal">Normal zoom</option>
 					<option value="iaf">Zoom to IAF</option>
+					<option value="maxpressure">Zoom to max pressure</option>
 				</select>
 			</div>
-			<PressureChart series={visibleSeries} {zoomIAF} />
+			<PressureChart series={visibleSeries} zoomMode={zoom} />
 		</div>
 
 		{#if allSeries.length > 1}

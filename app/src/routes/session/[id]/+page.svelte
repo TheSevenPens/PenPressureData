@@ -9,7 +9,6 @@
 	const COLOR = "#4a6fa5";
 
 	let zoom = $state('normal');
-	let zoomIAF = $derived(zoom === 'iaf');
 
 	let chartSeries = $derived(
 		session
@@ -91,9 +90,10 @@
 					<select class="zoom-select" bind:value={zoom}>
 						<option value="normal">Normal zoom</option>
 						<option value="iaf">Zoom to IAF</option>
+						<option value="maxpressure">Zoom to max pressure</option>
 					</select>
 				</div>
-				<PressureChart series={chartSeries} {zoomIAF} />
+				<PressureChart series={chartSeries} zoomMode={zoom} />
 			</div>
 		</div>
 	</div>
