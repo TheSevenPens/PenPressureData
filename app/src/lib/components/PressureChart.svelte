@@ -32,10 +32,10 @@
 		if (zoomMode === 'maxpressure') {
 			const allRecords = series.flatMap(s => s.records);
 			const maxX = Math.max(...allRecords.map(([x]) => x));
-			// Start x-axis where data first enters the 90%+ y-range (minus a small buffer)
-			const highPressureX = allRecords.filter(([, y]) => y >= 90).map(([x]) => x);
+			// Start x-axis where data first enters the 95%+ y-range (minus a small buffer)
+			const highPressureX = allRecords.filter(([, y]) => y >= 95).map(([x]) => x);
 			const minHighX = highPressureX.length > 0 ? Math.min(...highPressureX) : 0;
-			return { xMin: Math.max(0, minHighX - 20), xMax: maxX + 100, yMin: 90, yMax: 100 };
+			return { xMin: Math.max(0, minHighX - 20), xMax: maxX + 100, yMin: 95, yMax: 100 };
 		}
 		// normal
 		return { xMin: 0, xMax: 1000, yMin: 0, yMax: 100 };
