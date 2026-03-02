@@ -21,103 +21,133 @@ export function interpolatePhysical(records, targetLogical) {
 }
 
 /**
+ * Compute all consecutive slopes (dy/dx) from a records array.
+ * @param {Array<[number, number]>} records
+ * @returns {number[]}
+ */
+function computeSlopes(records) {
+	const slopes = [];
+	for (let i = 0; i < records.length - 1; i++) {
+		const [x0, y0] = records[i];
+		const [x1, y1] = records[i + 1];
+		if (x1 > x0) slopes.push((y1 - y0) / (x1 - x0));
+	}
+	return slopes;
+}
+
+/**
+ * Compute an exponentially recency-weighted average of a slope array.
+ * The LAST element is treated as most recent and receives the highest weight
+ * (weight = 2^i where i=0 is oldest, i=N-1 is newest).
+ *
+ * @param {number[]} slopes  ordered oldest → newest
+ * @returns {number|null}
+ */
+function weightedVelocity(slopes) {
+	if (slopes.length === 0) return null;
+	const weights = slopes.map((_, i) => Math.pow(2, i));
+	const sumW = weights.reduce((a, b) => a + b, 0);
+	return slopes.reduce((sum, v, i) => sum + v * weights[i], 0) / sumW;
+}
+
+// Number of consecutive slopes to include in the inertia average.
+const N_SLOPES = 4;
+
+// Threshold for P00/P100: treat as reached when remaining gap ≤ 0.5%.
+const THRESHOLD = 0.5;
+
+/**
  * Estimate the physical pressure at which logical pressure first rises from 0%
  * (i.e. the Initial Activation Force / P00).
  *
- * Uses a simple linear extrapolation from the first two measured data points
- * back to y = 0. This is appropriate because P00 physically cannot be far
- * from the first measured pressure — a complex model would over-extrapolate.
+ * Uses a spring model: imagining a ball rolling backward from the first measured
+ * point, its deceleration is proportional to its remaining distance from 0%
+ * (the gap y itself). This gives exponential decay of y as x decreases:
  *
- * Returns 0 if the result is negative, or the first measured x if the
- * extrapolation overshoots in the wrong direction.
+ *   y(x) = y_first · exp(k · (x − x_first))   for x < x_first
+ *
+ * where k = v_eff / y_first and v_eff is the inertia-weighted velocity at the
+ * start of the data (earliest slopes weighted most heavily, since they are most
+ * "recent" for a ball moving in the backward direction).
+ *
+ * P00 is defined as x where y drops to 0.5%.
  *
  * @param {Array<[number, number]>} records
  * @returns {number|null}
  */
 export function estimateP00(records) {
-	// If the first point is already at y=0, return it directly.
 	if (records[0][1] <= 0) return records[0][0];
 	if (records.length < 2) return null;
 
-	const [x0, y0] = records[0];
-	const [x1, y1] = records[1];
+	const allSlopes = computeSlopes(records);
+	if (allSlopes.length === 0) return null;
 
-	// Need a positive slope to extrapolate back to zero.
-	const slope = (y1 - y0) / (x1 - x0);
-	if (slope <= 0) return null;
+	// Take the first N slopes. For the backward-moving ball the earliest slope
+	// is most "recent", so reverse before weighting (weightedVelocity treats
+	// the last element as newest/highest-weight).
+	const firstSlopes = allSlopes.slice(0, N_SLOPES).reverse();
+	const vEff = weightedVelocity(firstSlopes);
+	if (vEff === null || vEff <= 0) return null;
 
-	// Linear extrapolation to y = 0: x = x0 - y0 / slope
-	const p00 = x0 - y0 / slope;
+	const [xFirst, yFirst] = records[0];
+	if (yFirst <= THRESHOLD) return xFirst;
 
-	// Clamp: activation force can't be negative, and can't exceed first measured x.
+	// Spring constant: k = vEff / yFirst
+	const k = vEff / yFirst;
+
+	// Solve y(x) = THRESHOLD → x = xFirst + ln(THRESHOLD / yFirst) / k
+	const p00 = xFirst + Math.log(THRESHOLD / yFirst) / k;
+
 	if (p00 < 0) return 0;
-	if (p00 >= x0) return x0;
-
+	if (p00 >= xFirst) return xFirst;
 	return p00;
 }
 
 /**
- * Estimate the physical pressure at which logical pressure reaches 100%,
- * by fitting an exponential decay to the "remaining" logical pressure (100 - y)
- * using only the last 5 data points. This captures the LOCAL curvature at the
- * top of the curve rather than the average behaviour across the full top quarter,
- * which would produce a shallower (too slow) decay and an overly high estimate.
+ * Estimate the physical pressure at which logical pressure reaches 100% (P100).
  *
- * Model: ln(100 - y) = a + b·x  (b must be negative — curve converges)
+ * Uses a spring model: the remaining gap r = 100 − y decays proportionally to
+ * itself as x increases — like a ball approaching 100% that decelerates the
+ * closer it gets. This gives:
+ *
+ *   r(x) = r_last · exp(−k · (x − x_last))
+ *
+ * where k = v_eff / r_last and v_eff is the inertia-weighted velocity at the
+ * end of the data (most recent slopes weighted most heavily).
+ *
  * P100 is defined as x where remaining drops to 0.5% (i.e. y = 99.5%).
- *
- * Returns null if the fit is unreliable or extrapolation is excessive.
  *
  * @param {Array<[number, number]>} records
  * @returns {number|null}
  */
 export function estimateP100(records) {
-	// If any measurement already hits 100%, return that x.
 	for (const [x, y] of records) {
 		if (y >= 100) return x;
 	}
+	if (records.length < 2) return null;
 
-	// Use only the last 5 points — local behaviour is what matters for extrapolation.
-	const top = records.slice(-5);
-	if (top.length < 2) return null;
+	const allSlopes = computeSlopes(records);
+	if (allSlopes.length === 0) return null;
 
-	// Build (x, ln(100 - y)) pairs; skip any points where remaining ≤ 0.
-	const pts = [];
-	for (const [x, y] of top) {
-		const rem = 100 - y;
-		if (rem <= 0) continue;
-		pts.push([x, Math.log(rem)]);
-	}
-	if (pts.length < 2) return null;
+	// Take last N slopes, most recent last — weightedVelocity gives it highest weight.
+	const lastSlopes = allSlopes.slice(-N_SLOPES);
+	const vEff = weightedVelocity(lastSlopes);
+	if (vEff === null || vEff <= 0) return null;
 
-	// Least-squares fit: ln(rem) = a + b·x
-	const n = pts.length;
-	const sumX  = pts.reduce((s, [x])    => s + x,     0);
-	const sumZ  = pts.reduce((s, [, z])  => s + z,     0);
-	const sumXZ = pts.reduce((s, [x, z]) => s + x * z, 0);
-	const sumX2 = pts.reduce((s, [x])    => s + x * x, 0);
+	const [xLast, yLast] = records[records.length - 1];
+	const rLast = 100 - yLast;
 
-	const denom = n * sumX2 - sumX * sumX;
-	if (Math.abs(denom) < 1e-10) return null;
+	if (rLast <= 0) return xLast;
+	if (rLast <= THRESHOLD) return xLast;
 
-	const b = (n * sumXZ - sumX * sumZ) / denom;
-	const a = (sumZ - b * sumX) / n;
+	// Spring constant: k = vEff / rLast
+	const k = vEff / rLast;
 
-	// b must be negative for the model to converge toward 100%.
-	if (b >= 0) return null;
+	// Solve r(x) = THRESHOLD → x = xLast + ln(rLast / THRESHOLD) / k
+	const p100 = xLast + Math.log(rLast / THRESHOLD) / k;
 
-	// Solve for x where remaining = 0.5% (y = 99.5%).
-	const THRESHOLD = 0.5;
-	const p100 = (Math.log(THRESHOLD) - a) / b;
-
-	const maxMeasuredX = records[records.length - 1][0];
-
-	// If the last measured point already exceeds the threshold, cap at that x.
-	if (p100 <= maxMeasuredX) return maxMeasuredX;
-
-	// Reject if extrapolation is implausibly large (> 4× max measured pressure).
-	if (p100 > maxMeasuredX * 4) return null;
-
+	if (p100 <= xLast) return xLast;
+	if (p100 > xLast * 4) return null;
 	return p100;
 }
 
