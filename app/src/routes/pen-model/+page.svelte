@@ -1,9 +1,10 @@
 <script>
 	import { base } from '$app/paths';
 	import { allSessions } from '$lib/data.js';
+	import BrandFilter from '$lib/components/BrandFilter.svelte';
+	import ModelFilter from '$lib/components/ModelFilter.svelte';
 
-	// Group sessions by brand+model → one row per unique model
-	const models = (() => {
+	const allModels = (() => {
 		const map = {};
 		for (const s of allSessions) {
 			const key = `${s.brand}||${s.pen}`;
@@ -17,10 +18,30 @@
 			.map(({ pens, ...rest }) => ({ ...rest, pens: pens.size }))
 			.sort((a, b) => a.brand.localeCompare(b.brand) || a.model.localeCompare(b.model));
 	})();
+
+	let selectedBrand = $state('');
+	let selectedModel = $state('');
+
+	function onBrandChange() {
+		selectedModel = '';
+	}
+
+	let filteredModels = $derived(
+		allModels.filter(m =>
+			(!selectedBrand || m.brand === selectedBrand) &&
+			(!selectedModel || m.model === selectedModel)
+		)
+	);
 </script>
 
 <div class="models-page">
-	<p class="summary">{models.length} pen models</p>
+	<div class="controls">
+		<div class="filter-row">
+			<BrandFilter bind:selectedBrand onchange={onBrandChange} />
+			<span class="count">{filteredModels.length} model{filteredModels.length !== 1 ? 's' : ''}</span>
+		</div>
+		<ModelFilter bind:selectedModel selectedBrand={selectedBrand} />
+	</div>
 
 	<table class="models-table">
 		<thead>
@@ -33,7 +54,7 @@
 			</tr>
 		</thead>
 		<tbody>
-			{#each models as m}
+			{#each filteredModels as m}
 				<tr>
 					<td class="btn-cell">
 						<a href="{base}/pen-model/{m.brand}/{m.model}" class="view-btn">View</a>
@@ -53,10 +74,24 @@
 		max-width: 700px;
 	}
 
-	.summary {
-		font-size: 0.875rem;
-		color: #888;
-		margin: 0 0 1rem;
+	.controls {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.5rem;
+		margin-bottom: 1rem;
+	}
+
+	.filter-row {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		flex-wrap: wrap;
+	}
+
+	.count {
+		font-size: 0.85rem;
+		color: #666;
 	}
 
 	.models-table {

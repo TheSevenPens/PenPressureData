@@ -1,16 +1,12 @@
 <script>
 	import { base } from '$app/paths';
-	import { allSessions, byBrand, brands } from '$lib/data.js';
+	import { allSessions } from '$lib/data.js';
+	import BrandFilter from '$lib/components/BrandFilter.svelte';
+	import ModelFilter from '$lib/components/ModelFilter.svelte';
 
 	let selectedBrand = $state('');
 	let selectedModel = $state('');
 	let expandedSessionId = $state(null);
-
-	let availableModels = $derived(
-		selectedBrand
-			? Object.keys(byBrand[selectedBrand]?.byModel ?? {}).sort()
-			: []
-	);
 
 	let filteredSessions = $derived(
 		allSessions.filter((s) => {
@@ -35,27 +31,11 @@
 </script>
 
 <div class="controls">
-	<label>
-		Brand
-		<select bind:value={selectedBrand} onchange={onBrandChange}>
-			<option value="">All brands</option>
-			{#each brands as brand}
-				<option value={brand}>{brand}</option>
-			{/each}
-		</select>
-	</label>
-
-	<label>
-		Model
-		<select bind:value={selectedModel} onchange={onModelChange} disabled={!selectedBrand}>
-			<option value="">All models</option>
-			{#each availableModels as model}
-				<option value={model}>{model}</option>
-			{/each}
-		</select>
-	</label>
-
-	<span class="count">{filteredSessions.length} session{filteredSessions.length !== 1 ? 's' : ''}</span>
+	<div class="filter-row">
+		<BrandFilter bind:selectedBrand onchange={onBrandChange} />
+		<span class="count">{filteredSessions.length} session{filteredSessions.length !== 1 ? 's' : ''}</span>
+	</div>
+	<ModelFilter bind:selectedModel selectedBrand={selectedBrand} onchange={onModelChange} />
 </div>
 
 <div class="table-wrap">
@@ -133,32 +113,17 @@
 <style>
 	.controls {
 		display: flex;
-		align-items: center;
-		gap: 1.5rem;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.5rem;
 		margin-bottom: 1rem;
-		flex-wrap: wrap;
 	}
 
-	.controls label {
+	.filter-row {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.9rem;
-		font-weight: 500;
-	}
-
-	.controls select {
-		padding: 0.3rem 0.5rem;
-		border: 1px solid #ccc;
-		border-radius: 4px;
-		font-size: 0.9rem;
-		background: #fff;
-		min-width: 140px;
-	}
-
-	.controls select:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
+		gap: 1rem;
+		flex-wrap: wrap;
 	}
 
 	.count {

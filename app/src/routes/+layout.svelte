@@ -1,30 +1,34 @@
 <script>
-	import { page } from '$app/stores';
-	import { base } from '$app/paths';
+	import { page } from "$app/stores";
+	import { base } from "$app/paths";
 
 	let { children } = $props();
 
 	const tabs = [
-		{ label: 'Pen Models', href: `${base}/pen-model` },
-		{ label: 'Pens', href: `${base}/pens` },
-		{ label: 'Sessions', href: `${base}/` },
+		{ label: "Pen Models", href: `${base}/pen-model` },
+		{ label: "Pens", href: `${base}/pens` },
+		{ label: "Sessions", href: `${base}/` },
 	];
 
 	function isActive(href) {
 		const path = $page.url.pathname;
-		if (href === `${base}/`) return path === `${base}/` || path.startsWith(`${base}/session`);
-		if (href === `${base}/pens`) return path === `${base}/pens` || path.startsWith(`${base}/pens/`);
+		if (href === `${base}/`)
+			return path === `${base}/` || path.startsWith(`${base}/session`);
+		if (href === `${base}/pens`)
+			return path === `${base}/pens` || path.startsWith(`${base}/pens/`);
 		return path.startsWith(href);
 	}
 </script>
 
 <header>
-	<h1>Pen Pressure Data</h1>
+	<h1>SevenPens Pen Pressure Data</h1>
 </header>
 
 <nav class="tab-bar">
 	{#each tabs as tab}
-		<a href={tab.href} class="tab" class:active={isActive(tab.href)}>{tab.label}</a>
+		<a href={tab.href} class="tab" class:active={isActive(tab.href)}
+			>{tab.label}</a
+		>
 	{/each}
 </nav>
 
@@ -34,7 +38,7 @@
 
 <style>
 	:global(*) {
-		font-family: 'Google Sans Flex', sans-serif;
+		font-family: "Google Sans Flex", sans-serif;
 	}
 
 	header {

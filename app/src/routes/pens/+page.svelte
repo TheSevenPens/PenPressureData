@@ -1,9 +1,10 @@
 <script>
 	import { base } from '$app/paths';
 	import { allSessions } from '$lib/data.js';
+	import BrandFilter from '$lib/components/BrandFilter.svelte';
+	import ModelFilter from '$lib/components/ModelFilter.svelte';
 
-	// Group sessions by inventoryid → one row per pen
-	const pens = (() => {
+	const allPens = (() => {
 		const map = {};
 		for (const s of allSessions) {
 			if (!map[s.inventoryid]) {
@@ -11,17 +12,36 @@
 			}
 			map[s.inventoryid].count++;
 		}
-		// Sort: brand → model → inventoryid
 		return Object.values(map).sort((a, b) =>
 			a.brand.localeCompare(b.brand) ||
 			a.model.localeCompare(b.model) ||
 			a.inventoryid.localeCompare(b.inventoryid)
 		);
 	})();
+
+	let selectedBrand = $state('');
+	let selectedModel = $state('');
+
+	function onBrandChange() {
+		selectedModel = '';
+	}
+
+	let filteredPens = $derived(
+		allPens.filter(p =>
+			(!selectedBrand || p.brand === selectedBrand) &&
+			(!selectedModel || p.model === selectedModel)
+		)
+	);
 </script>
 
 <div class="pens-page">
-	<p class="summary">{pens.length} pens</p>
+	<div class="controls">
+		<div class="filter-row">
+			<BrandFilter bind:selectedBrand onchange={onBrandChange} />
+			<span class="count">{filteredPens.length} pen{filteredPens.length !== 1 ? 's' : ''}</span>
+		</div>
+		<ModelFilter bind:selectedModel selectedBrand={selectedBrand} />
+	</div>
 
 	<table class="pens-table">
 		<thead>
@@ -34,7 +54,7 @@
 			</tr>
 		</thead>
 		<tbody>
-			{#each pens as pen}
+			{#each filteredPens as pen}
 				<tr>
 					<td class="btn-cell">
 						<a href="{base}/pens/{pen.inventoryid}" class="view-btn">View</a>
@@ -54,10 +74,24 @@
 		max-width: 800px;
 	}
 
-	.summary {
-		font-size: 0.875rem;
-		color: #888;
-		margin: 0 0 1rem;
+	.controls {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.5rem;
+		margin-bottom: 1rem;
+	}
+
+	.filter-row {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		flex-wrap: wrap;
+	}
+
+	.count {
+		font-size: 0.85rem;
+		color: #666;
 	}
 
 	.pens-table {
