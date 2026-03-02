@@ -1,10 +1,32 @@
 <script>
+	import { page } from '$app/stores';
+	import { base } from '$app/paths';
+
 	let { children } = $props();
+
+	const tabs = [
+		{ label: 'Sessions', href: `${base}/` },
+		{ label: 'Pens', href: `${base}/pens` },
+		{ label: 'Pen Model', href: `${base}/pen-model` },
+	];
+
+	function isActive(href) {
+		const path = $page.url.pathname;
+		if (href === `${base}/`) return path === `${base}/` || path.startsWith(`${base}/session`);
+		if (href === `${base}/pens`) return path === `${base}/pens` || path.startsWith(`${base}/pens/`);
+		return path.startsWith(href);
+	}
 </script>
 
 <header>
 	<h1>Pen Pressure Data</h1>
 </header>
+
+<nav class="tab-bar">
+	{#each tabs as tab}
+		<a href={tab.href} class="tab" class:active={isActive(tab.href)}>{tab.label}</a>
+	{/each}
+</nav>
 
 <main>
 	{@render children()}
@@ -27,6 +49,33 @@
 		font-size: 1.25rem;
 		font-weight: 600;
 		letter-spacing: 0.5px;
+	}
+
+	.tab-bar {
+		display: flex;
+		gap: 0;
+		background: #f5f5f5;
+		border-bottom: 1px solid #ddd;
+		padding: 0 1.5rem;
+	}
+
+	.tab {
+		padding: 0.6rem 1.1rem;
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: #666;
+		text-decoration: none;
+		border-bottom: 2px solid transparent;
+		margin-bottom: -1px;
+	}
+
+	.tab:hover {
+		color: #333;
+	}
+
+	.tab.active {
+		color: #1a1a2e;
+		border-bottom-color: #e94560;
 	}
 
 	main {

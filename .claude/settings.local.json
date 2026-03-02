@@ -21,7 +21,10 @@
       "Bash(git push:*)",
       "Bash(gh run list:*)",
       "WebFetch(domain:api.github.com)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(conda info --envs)",
+      "Bash(C:Userssevenanaconda3Scriptsconda.exe activate node1)",
+      "Bash(\"/c/Users/seven/anaconda3/Scripts/conda.exe\" activate node1)"
     ]
   }
 }
