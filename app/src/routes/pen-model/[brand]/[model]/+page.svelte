@@ -14,8 +14,7 @@
 		allSessions.filter(s => s.brand === data.brand && s.pen === data.model)
 	);
 
-	let chartSeries = $derived((() => {
-		// Assign a stable color per unique inventoryid
+	let allSeries = $derived((() => {
 		const colorMap = {};
 		let colorIndex = 0;
 		for (const s of sessions) {
@@ -27,8 +26,21 @@
 			label: `${s.inventoryid} ${s.date}`,
 			records: s.records,
 			color: colorMap[s.inventoryid],
+			inventoryid: s.inventoryid,
+			date: s.date,
 		}));
 	})());
+
+	let hiddenLabels = $state(new Set());
+
+	function toggleSeries(label) {
+		const next = new Set(hiddenLabels);
+		if (next.has(label)) next.delete(label);
+		else next.add(label);
+		hiddenLabels = next;
+	}
+
+	let visibleSeries = $derived(allSeries.filter(s => !hiddenLabels.has(s.label)));
 
 	let zoomIAF = $state(false);
 </script>
@@ -49,7 +61,7 @@
 			</div>
 		</div>
 
-		<div class="chart-section">
+		<div class="chart-area">
 			<div class="chart-header">
 				<h2>Pressure Response</h2>
 				<label class="zoom-label">
@@ -57,8 +69,35 @@
 					Zoom to IAF
 				</label>
 			</div>
-			<PressureChart series={chartSeries} {zoomIAF} />
+			<PressureChart series={visibleSeries} {zoomIAF} />
 		</div>
+
+		<table class="legend-table">
+			<thead>
+				<tr>
+					<th></th>
+					<th>Inventory ID</th>
+					<th>Date</th>
+					<th class="centered">Show</th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each allSeries as s}
+					<tr class:dimmed={hiddenLabels.has(s.label)}>
+						<td><span class="swatch" style="background: {s.color}"></span></td>
+						<td class="mono">{s.inventoryid}</td>
+						<td class="mono">{s.date}</td>
+						<td class="centered">
+							<input
+								type="checkbox"
+								checked={!hiddenLabels.has(s.label)}
+								onchange={() => toggleSeries(s.label)}
+							/>
+						</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
 	</div>
 {:else}
 	<div class="not-found">
@@ -120,6 +159,17 @@
 		font-family: inherit;
 	}
 
+	.chart-area {
+		height: 480px;
+		display: flex;
+		flex-direction: column;
+		margin-bottom: 1.5rem;
+	}
+
+	.chart-area :global(.chart-wrap) {
+		flex: 1;
+	}
+
 	.chart-header {
 		display: flex;
 		align-items: center;
@@ -151,14 +201,48 @@
 		cursor: pointer;
 	}
 
-	.chart-section {
-		height: 480px;
-		display: flex;
-		flex-direction: column;
+	/* Legend table */
+	.legend-table {
+		border-collapse: collapse;
+		font-size: 0.875rem;
 	}
 
-	.chart-section :global(.chart-wrap) {
-		flex: 1;
+	.legend-table thead th {
+		background: #f0f0f0;
+		padding: 0.2rem 0.75rem;
+		text-align: left;
+		font-weight: 600;
+		border-bottom: 2px solid #ddd;
+		white-space: nowrap;
+	}
+
+	.legend-table thead th.centered {
+		text-align: center;
+	}
+
+	.legend-table tbody td {
+		padding: 0.15rem 0.75rem;
+		border-bottom: 1px solid #eee;
+	}
+
+	.legend-table tbody tr.dimmed td {
+		opacity: 0.4;
+	}
+
+	.swatch {
+		display: inline-block;
+		width: 14px;
+		height: 14px;
+		border-radius: 2px;
+		vertical-align: middle;
+	}
+
+	.mono {
+		font-family: monospace;
+	}
+
+	.centered {
+		text-align: center;
 	}
 
 	.not-found {

@@ -86,12 +86,7 @@
 					},
 				},
 				plugins: {
-					legend: {
-						display: series.length > 1,
-						labels: {
-							font: { family: "'Google Sans Flex', sans-serif" },
-						},
-					},
+					legend: { display: false },
 					tooltip: {
 						callbacks: {
 							label: (ctx) =>
@@ -109,7 +104,6 @@
 	});
 
 	$effect(() => {
-		// Rebuild when series or zoom changes
 		series;
 		zoomIAF;
 		if (canvas) buildChart();
