@@ -1,4 +1,5 @@
 <script>
+	import { base } from '$app/paths';
 	import { allSessions } from '$lib/data.js';
 
 	// Group sessions by inventoryid → one row per pen
@@ -25,6 +26,7 @@
 	<table class="pens-table">
 		<thead>
 			<tr>
+				<th></th>
 				<th>Brand</th>
 				<th>Model</th>
 				<th>Inventory ID</th>
@@ -34,6 +36,9 @@
 		<tbody>
 			{#each pens as pen}
 				<tr>
+					<td class="btn-cell">
+						<a href="{base}/pens/{pen.inventoryid}" class="view-btn">View</a>
+					</td>
 					<td>{pen.brand}</td>
 					<td>{pen.model}</td>
 					<td class="mono">{pen.inventoryid}</td>
@@ -77,6 +82,26 @@
 	.pens-table tbody td {
 		padding: 0.25rem 1rem;
 		border-bottom: 1px solid #eee;
+	}
+
+	.btn-cell {
+		padding: 0.25rem 0.5rem;
+	}
+
+	.view-btn {
+		display: inline-block;
+		padding: 0.15rem 0.6rem;
+		font-size: 0.75rem;
+		border: 1px solid #4a6fa5;
+		border-radius: 3px;
+		color: #4a6fa5;
+		text-decoration: none;
+		white-space: nowrap;
+	}
+
+	.view-btn:hover {
+		background: #4a6fa5;
+		color: #fff;
 	}
 
 	.num {
