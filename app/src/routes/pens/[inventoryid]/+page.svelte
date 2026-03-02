@@ -2,6 +2,7 @@
 	import { base } from '$app/paths';
 	import { allSessions } from '$lib/data.js';
 	import PressureChart from '$lib/components/PressureChart.svelte';
+	import { interpolatePhysical, fmtP } from '$lib/interpolate.js';
 
 	const COLORS = [
 		'#4a6fa5', '#e94560', '#2ecc71', '#f39c12', '#9b59b6',
@@ -22,6 +23,9 @@
 			records: s.records,
 			color: COLORS[i % COLORS.length],
 			date: s.date,
+			p25: interpolatePhysical(s.records, 25),
+			p50: interpolatePhysical(s.records, 50),
+			p75: interpolatePhysical(s.records, 75),
 		}))
 	);
 
@@ -73,6 +77,9 @@
 					<tr>
 						<th></th>
 						<th>Date</th>
+						<th class="right">P25 (gf)</th>
+						<th class="right">P50 (gf)</th>
+						<th class="right">P75 (gf)</th>
 						<th class="centered">Show</th>
 					</tr>
 				</thead>
@@ -81,6 +88,9 @@
 						<tr class:dimmed={hiddenLabels.has(s.label)}>
 							<td><span class="swatch" style="background: {s.color}"></span></td>
 							<td class="mono">{s.date}</td>
+							<td class="mono right">{fmtP(s.p25)}</td>
+							<td class="mono right">{fmtP(s.p50)}</td>
+							<td class="mono right">{fmtP(s.p75)}</td>
 							<td class="centered">
 								<input
 									type="checkbox"
@@ -209,6 +219,10 @@
 		text-align: center;
 	}
 
+	.legend-table thead th.right {
+		text-align: right;
+	}
+
 	.legend-table tbody td {
 		padding: 0.15rem 0.75rem;
 		border-bottom: 1px solid #eee;
@@ -232,6 +246,10 @@
 
 	.centered {
 		text-align: center;
+	}
+
+	.right {
+		text-align: right;
 	}
 
 	.not-found {
