@@ -62,7 +62,11 @@
 								size: 12,
 							},
 						},
-						ticks: { font: { family: "monospace" } },
+						ticks: {
+							font: { family: "monospace" },
+							stepSize: zoomIAF ? 1 : undefined,
+							autoSkip: !zoomIAF,
+						},
 						grid: { color: "#e8e8e8" },
 					},
 					y: {
