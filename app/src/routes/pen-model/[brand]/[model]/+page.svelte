@@ -108,8 +108,6 @@
 
 {#if sessions.length > 0}
 	<div class="model-page">
-		<a href="{base}/pen-model" class="back-link">← Back to pen models</a>
-
 		<div class="nav-strip">
 			{#if prevModel}
 				<a
@@ -235,17 +233,6 @@
 <style>
 	.model-page {
 		max-width: 1000px;
-	}
-
-	.back-link {
-		display: inline-block;
-		margin-bottom: 0.6rem;
-		font-size: 0.875rem;
-		color: #4a6fa5;
-		text-decoration: none;
-	}
-	.back-link:hover {
-		text-decoration: underline;
 	}
 
 	.nav-strip {

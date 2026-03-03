@@ -98,8 +98,6 @@
 
 {#if pen}
 	<div class="pen-page">
-		<a href="{base}/pens" class="back-link">← Back to pens</a>
-
 		<div class="nav-strip">
 			{#if prevPen}
 				<a href="{base}/pens/{prevPen.inventoryid}" class="nav-btn">
@@ -213,17 +211,6 @@
 <style>
 	.pen-page {
 		max-width: 1000px;
-	}
-
-	.back-link {
-		display: inline-block;
-		margin-bottom: 0.6rem;
-		font-size: 0.875rem;
-		color: #4a6fa5;
-		text-decoration: none;
-	}
-	.back-link:hover {
-		text-decoration: underline;
 	}
 
 	.nav-strip {
