@@ -3,6 +3,7 @@
 	import { allSessions, sessionById } from "$lib/data.js";
 	import PressureChart from "$lib/components/PressureChart.svelte";
 	import RecordsTable from "$lib/components/RecordsTable.svelte";
+	import BreadcrumbBar from "$lib/components/BreadcrumbBar.svelte";
 
 	let { data } = $props();
 	let session = $derived(sessionById[data.id]);
@@ -51,20 +52,11 @@
 			{/if}
 		</div>
 
-		<div class="session-header">
-			<div class="session-title">
-				<span class="brand">{session.brand}</span>
-				<span class="sep">/</span>
-				<span class="model">{session.pen}</span>
-			</div>
-			<div class="session-meta-line">
-				<span class="meta-chip">{session.inventoryid}</span>
-				<span class="meta-chip">{session.date}</span>
-				{#if session.notes}
-					<span class="meta-chip note">{session.notes}</span>
-				{/if}
-			</div>
-		</div>
+		<BreadcrumbBar
+			brand={session.brand}
+			model={session.pen}
+			detail={[session.inventoryid, session.date, ...(session.notes ? [session.notes] : [])]}
+		/>
 
 		<div class="meta-grid">
 			<div class="meta-item">
@@ -146,51 +138,6 @@
 		color: #aaa;
 		white-space: nowrap;
 		flex-shrink: 0;
-	}
-
-	.session-header {
-		margin-bottom: 1.25rem;
-	}
-
-	.session-title {
-		font-size: 1.5rem;
-		font-weight: 600;
-		margin-bottom: 0.4rem;
-		display: flex;
-		align-items: baseline;
-		gap: 0.4rem;
-	}
-
-	.brand {
-		color: #333;
-	}
-	.sep {
-		color: #aaa;
-	}
-	.model {
-		color: #4a6fa5;
-	}
-
-	.session-meta-line {
-		display: flex;
-		gap: 0.5rem;
-		flex-wrap: wrap;
-	}
-
-	.meta-chip {
-		display: inline-block;
-		padding: 0.2rem 0.6rem;
-		background: #f0f0f0;
-		border-radius: 4px;
-		font-size: 0.8rem;
-		font-family: monospace;
-		color: #444;
-	}
-
-	.meta-chip.note {
-		background: #fff8e1;
-		color: #7a5a00;
-		font-family: inherit;
 	}
 
 	.meta-grid {

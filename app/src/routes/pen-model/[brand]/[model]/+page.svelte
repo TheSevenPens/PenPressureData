@@ -2,6 +2,7 @@
 	import { base } from "$app/paths";
 	import { allSessions } from "$lib/data.js";
 	import PressureChart from "$lib/components/PressureChart.svelte";
+	import BreadcrumbBar from "$lib/components/BreadcrumbBar.svelte";
 	import {
 		interpolatePhysical,
 		estimateP00,
@@ -138,22 +139,14 @@
 			{/if}
 		</div>
 
-		<div class="model-header">
-			<div class="model-title">
-				<span class="brand">{data.brand}</span>
-				<span class="sep">/</span>
-				<span class="model">{data.model}</span>
-			</div>
-			<div class="model-meta-line">
-				<span class="meta-chip"
-					>{new Set(sessions.map((s) => s.inventoryid)).size} pens</span
-				>
-				<span class="meta-chip sessions-chip"
-					>{sessions.length}
-					{sessions.length === 1 ? "session" : "sessions"}</span
-				>
-			</div>
-		</div>
+		<BreadcrumbBar
+			brand={data.brand}
+			model={data.model}
+			detail={[
+				`${new Set(sessions.map((s) => s.inventoryid)).size} pens`,
+				`${sessions.length} ${sessions.length === 1 ? 'session' : 'sessions'}`
+			]}
+		/>
 
 		<div class="chart-area">
 			<div class="chart-header">
@@ -271,47 +264,6 @@
 		color: #aaa;
 		white-space: nowrap;
 		flex-shrink: 0;
-	}
-
-	.model-header {
-		margin-bottom: 1.5rem;
-	}
-
-	.model-title {
-		font-size: 1.5rem;
-		font-weight: 600;
-		margin-bottom: 0.4rem;
-		display: flex;
-		align-items: baseline;
-		gap: 0.4rem;
-	}
-
-	.brand {
-		color: #333;
-	}
-	.sep {
-		color: #aaa;
-	}
-	.model {
-		color: #4a6fa5;
-	}
-
-	.model-meta-line {
-		display: flex;
-		gap: 0.5rem;
-	}
-
-	.meta-chip {
-		display: inline-block;
-		padding: 0.2rem 0.6rem;
-		background: #f0f0f0;
-		border-radius: 4px;
-		font-size: 0.8rem;
-		font-family: monospace;
-		color: #444;
-	}
-	.sessions-chip {
-		font-family: inherit;
 	}
 
 	.chart-area {
