@@ -4,6 +4,7 @@
 	import PressureChart from "$lib/components/PressureChart.svelte";
 	import BreadcrumbBar from "$lib/components/BreadcrumbBar.svelte";
 	import NavStrip from "$lib/components/NavStrip.svelte";
+	import ZoomSelect from "$lib/components/ZoomSelect.svelte";
 	import EstimatesSelect from "$lib/components/EstimatesSelect.svelte";
 	import {
 		interpolatePhysical,
@@ -154,11 +155,7 @@
 		<div class="chart-area">
 			<div class="chart-header">
 				<h2>Pressure Response</h2>
-				<select class="zoom-select" bind:value={zoom}>
-					<option value="normal">Normal zoom</option>
-					<option value="iaf">Zoom to IAF</option>
-					<option value="maxpressure">Zoom to max pressure</option>
-				</select>
+				<ZoomSelect bind:value={zoom} />
 				<EstimatesSelect bind:value={showEstimates} />
 				<select class="export-select" onchange={(e) => { handleExport(e.currentTarget.value); e.currentTarget.value = ''; }}>
 					<option value="">Export ▾</option>
@@ -281,14 +278,6 @@
 		margin: 0;
 	}
 
-	.zoom-select {
-		font-size: 0.8rem;
-		color: #444;
-		border: 1px solid #ccc;
-		border-radius: 4px;
-		padding: 0.2rem 0.4rem;
-		cursor: pointer;
-	}
 
 
 	.export-select {

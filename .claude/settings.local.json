@@ -38,7 +38,8 @@
       "Bash(powershell.exe -ExecutionPolicy Bypass -File \"C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\fix_model_page.ps1\")",
       "Bash(powershell.exe -ExecutionPolicy Bypass -File \"C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\fix_pen_view_btn.ps1\")",
       "Bash(powershell.exe -ExecutionPolicy Bypass -File \"C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\fix_pen_header.ps1\")",
-      "Bash(powershell.exe -ExecutionPolicy Bypass -File \"C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\update_estimates_select.ps1\")"
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File \"C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\update_estimates_select.ps1\")",
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File \"C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\update_zoom_select.ps1\")"
     ]
   }
 }
