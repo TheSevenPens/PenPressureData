@@ -8,6 +8,7 @@
 		LineElement,
 		Tooltip,
 		Legend,
+		Title,
 	} from "chart.js";
 
 	Chart.register(
@@ -17,10 +18,11 @@
 		LineElement,
 		Tooltip,
 		Legend,
+		Title,
 	);
 
-	/** @type {{ series: Array<{ label: string, records: Array<[number, number]>, color: string, p00?: number|null, p100?: number|null }>, zoomMode?: string }} */
-	let { series, zoomMode = "normal" } = $props();
+	/** @type {{ series: Array<{ label: string, records: Array<[number, number]>, color: string, p00?: number|null, p100?: number|null }>, zoomMode?: string, title?: string|null }} */
+	let { series, zoomMode = "normal", title = null } = $props();
 
 	let canvas;
 	let chart;
@@ -166,6 +168,17 @@
 				},
 				plugins: {
 					legend: { display: false },
+					title: {
+						display: title != null,
+						text: title ?? "",
+						color: "#888",
+						font: {
+							family: "'Google Sans Flex', sans-serif",
+							size: 11,
+							weight: "normal",
+						},
+						padding: { top: 8, bottom: 2 },
+					},
 					tooltip: {
 						filter: (item) =>
 							!item.dataset.label.includes("_extrap"),
@@ -187,6 +200,7 @@
 	$effect(() => {
 		series;
 		zoomMode;
+		title;
 		if (canvas) buildChart();
 	});
 </script>
@@ -201,5 +215,6 @@
 		width: 100%;
 		height: 100%;
 		min-height: 320px;
+		background: #f7f7f7;
 	}
 </style>

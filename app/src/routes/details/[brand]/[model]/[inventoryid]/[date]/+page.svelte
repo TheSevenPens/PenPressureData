@@ -97,7 +97,7 @@
 						<option value="maxpressure">Zoom to max pressure</option>
 					</select>
 				</div>
-				<PressureChart series={chartSeries} zoomMode={zoom} />
+				<PressureChart series={chartSeries} zoomMode={zoom} title="Pressure response for {session.brand} / {session.pen} / {session.inventoryid} / {session.date}" />
 			</div>
 		</div>
 	</div>

@@ -129,7 +129,7 @@
 					Show P00 & P100 estimates
 				</label>
 			</div>
-			<PressureChart series={visibleSeries} zoomMode={zoom} />
+			<PressureChart series={visibleSeries} zoomMode={zoom} title="Pressure response for {pen.brand} / {pen.pen} / {pen.inventoryid}" />
 		</div>
 
 		{#if allSeries.length > 1}
