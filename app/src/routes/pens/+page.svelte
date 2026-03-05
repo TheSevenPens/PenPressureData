@@ -57,7 +57,7 @@
 			{#each filteredPens as pen}
 				<tr>
 					<td class="btn-cell">
-						<a href="{base}/pens/{pen.inventoryid}" class="view-btn">View</a>
+						<a href="{base}/details/{encodeURIComponent(pen.brand)}/{encodeURIComponent(pen.model)}/{pen.inventoryid}" class="view-btn">View</a>
 					</td>
 					<td>{pen.brand}</td>
 					<td>{pen.model}</td>

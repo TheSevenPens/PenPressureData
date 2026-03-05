@@ -27,7 +27,11 @@
       "Bash(\"/c/Users/seven/anaconda3/Scripts/conda.exe\" activate node1)",
       "Bash(powershell -Command \"Move-Item ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes\\\\pen-model'' ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes\\\\model''\")",
       "Bash(powershell -Command \"Move-Item ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes\\\\model'' ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes\\\\models''\")",
-      "Bash(powershell -Command \"Move-Item ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes\\\\session'' ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes\\\\sessions''\")"
+      "Bash(powershell -Command \"Move-Item ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes\\\\session'' ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes\\\\sessions''\")",
+      "Bash(powershell -Command \"Remove-Item -Recurse -Force ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes\\\\models\\\\[brand]''; Remove-Item -Recurse -Force ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes\\\\pens\\\\[inventoryid]''; Remove-Item -Recurse -Force ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes\\\\sessions''\")",
+      "Bash(powershell -Command \"Get-ChildItem -Recurse ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes'' | Select-Object FullName\")",
+      "Bash(powershell -Command \"Remove-Item -Recurse -Force -LiteralPath ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes\\\\models\\\\[brand]''; Remove-Item -Recurse -Force -LiteralPath ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes\\\\pens\\\\[inventoryid]''\")",
+      "Bash(powershell -Command \"Set-Location ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app''; npm run build 2>&1\")"
     ]
   }
 }

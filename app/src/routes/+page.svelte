@@ -63,7 +63,7 @@
 				>
 					<td class="view-cell">
 						<a
-							href="{base}/sessions/{session.sessionId}"
+							href="{base}/details/{encodeURIComponent(session.brand)}/{encodeURIComponent(session.pen)}/{session.inventoryid}/{session.date}"
 							class="view-btn"
 							onclick={(e) => e.stopPropagation()}
 						>View</a>

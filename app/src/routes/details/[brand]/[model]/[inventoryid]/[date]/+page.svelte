@@ -1,24 +1,36 @@
 <script>
 	import { base } from "$app/paths";
-	import { allSessions, sessionById } from "$lib/data.js";
+	import { allSessions } from "$lib/data.js";
 	import PressureChart from "$lib/components/PressureChart.svelte";
 	import RecordsTable from "$lib/components/RecordsTable.svelte";
 	import BreadcrumbBar from "$lib/components/BreadcrumbBar.svelte";
 	import NavStrip from "$lib/components/NavStrip.svelte";
 
 	let { data } = $props();
-	let session = $derived(sessionById[data.id]);
+	let session = $derived(
+		allSessions.find(
+			(s) => s.inventoryid === data.inventoryid && s.date === data.date,
+		),
+	);
 
 	const COLOR = "#4a6fa5";
 
-	let zoom = $state('normal');
+	let zoom = $state("normal");
 
 	// --- Session navigation ---
 	let sessionIndex = $derived(
-		allSessions.findIndex(s => s.sessionId === data.id)
+		allSessions.findIndex(
+			(s) => s.inventoryid === data.inventoryid && s.date === data.date,
+		),
 	);
-	let prevSession = $derived(sessionIndex > 0 ? allSessions[sessionIndex - 1] : null);
-	let nextSession = $derived(sessionIndex < allSessions.length - 1 ? allSessions[sessionIndex + 1] : null);
+	let prevSession = $derived(
+		sessionIndex > 0 ? allSessions[sessionIndex - 1] : null,
+	);
+	let nextSession = $derived(
+		sessionIndex < allSessions.length - 1
+			? allSessions[sessionIndex + 1]
+			: null,
+	);
 
 	let chartSeries = $derived(
 		session
@@ -44,9 +56,9 @@
 			<NavStrip
 				index={sessionIndex}
 				total={allSessions.length}
-				prevHref={prevSession ? `${base}/sessions/${prevSession.sessionId}` : null}
+				prevHref={prevSession ? `${base}/details/${encodeURIComponent(prevSession.brand)}/${encodeURIComponent(prevSession.pen)}/${prevSession.inventoryid}/${prevSession.date}` : null}
 				prevLabel={prevSession ? `${prevSession.inventoryid} · ${prevSession.date}` : ''}
-				nextHref={nextSession ? `${base}/sessions/${nextSession.sessionId}` : null}
+				nextHref={nextSession ? `${base}/details/${encodeURIComponent(nextSession.brand)}/${encodeURIComponent(nextSession.pen)}/${nextSession.inventoryid}/${nextSession.date}` : null}
 				nextLabel={nextSession ? `${nextSession.inventoryid} · ${nextSession.date}` : ''}
 			/>
 		</div>
@@ -91,7 +103,7 @@
 	</div>
 {:else}
 	<div class="not-found">
-		<p>Session <code>{data.id}</code> not found.</p>
+		<p>Session <code>{data.inventoryid} {data.date}</code> not found.</p>
 		<a href="{base}/">← Back to sessions</a>
 	</div>
 {/if}

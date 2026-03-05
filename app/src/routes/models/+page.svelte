@@ -57,7 +57,7 @@
 			{#each filteredModels as m}
 				<tr>
 					<td class="btn-cell">
-						<a href="{base}/models/{m.brand}/{m.model}" class="view-btn">View</a>
+						<a href="{base}/details/{encodeURIComponent(m.brand)}/{encodeURIComponent(m.model)}" class="view-btn">View</a>
 					</td>
 					<td>{m.brand}</td>
 					<td>{m.model}</td>

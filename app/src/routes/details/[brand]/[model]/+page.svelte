@@ -122,9 +122,9 @@
 			<NavStrip
 				index={modelIndex}
 				total={allModels.length}
-				prevHref={prevModel ? `${base}/models/${encodeURIComponent(prevModel.brand)}/${encodeURIComponent(prevModel.model)}` : null}
+				prevHref={prevModel ? `${base}/details/${encodeURIComponent(prevModel.brand)}/${encodeURIComponent(prevModel.model)}` : null}
 				prevLabel={prevModel ? `${prevModel.brand} / ${prevModel.model}` : ''}
-				nextHref={nextModel ? `${base}/models/${encodeURIComponent(nextModel.brand)}/${encodeURIComponent(nextModel.model)}` : null}
+				nextHref={nextModel ? `${base}/details/${encodeURIComponent(nextModel.brand)}/${encodeURIComponent(nextModel.model)}` : null}
 				nextLabel={nextModel ? `${nextModel.brand} / ${nextModel.model}` : ''}
 			/>
 		</div>

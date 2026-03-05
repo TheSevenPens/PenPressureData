@@ -109,9 +109,9 @@
 			<NavStrip
 				index={penIndex}
 				total={allPens.length}
-				prevHref={prevPen ? `${base}/pens/${prevPen.inventoryid}` : null}
+				prevHref={prevPen ? `${base}/details/${encodeURIComponent(prevPen.brand)}/${encodeURIComponent(prevPen.pen)}/${prevPen.inventoryid}` : null}
 				prevLabel={prevPen ? prevPen.inventoryid : ''}
-				nextHref={nextPen ? `${base}/pens/${nextPen.inventoryid}` : null}
+				nextHref={nextPen ? `${base}/details/${encodeURIComponent(nextPen.brand)}/${encodeURIComponent(nextPen.pen)}/${nextPen.inventoryid}` : null}
 				nextLabel={nextPen ? nextPen.inventoryid : ''}
 			/>
 		</div>

@@ -12,6 +12,18 @@
 
 	function isActive(href) {
 		const path = $page.url.pathname;
+
+		// /details/ hierarchy — segment depth determines which tab is active
+		const detailsPrefix = `${base}/details/`;
+		if (path.startsWith(detailsPrefix)) {
+			const parts = path.slice(detailsPrefix.length).split("/").filter(Boolean);
+			if (href === `${base}/models`) return parts.length === 2;
+			if (href === `${base}/pens`) return parts.length === 3;
+			if (href === `${base}/`) return parts.length === 4;
+			return false;
+		}
+
+		// Standard listing paths
 		if (href === `${base}/`)
 			return path === `${base}/` || path.startsWith(`${base}/sessions`);
 		if (href === `${base}/pens`)
