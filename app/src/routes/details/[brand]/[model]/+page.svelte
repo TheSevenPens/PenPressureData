@@ -150,6 +150,7 @@
 				<tr>
 					<th class="centered">Show</th>
 					<th></th>
+					<th></th>
 					<th>Inventory ID</th>
 					<th>Date</th>
 					{#if showEstimates}<th class="right">P00 (gf)</th>{/if}
@@ -177,6 +178,12 @@
 							><span class="swatch" style="background: {s.color}"
 							></span></td
 						>
+						<td class="btn-cell">
+							<a
+								href="{base}/details/{encodeURIComponent(data.brand)}/{encodeURIComponent(data.model)}/{s.inventoryid}/{s.date}"
+								class="view-btn"
+							>View</a>
+						</td>
 						<td class="mono">{s.inventoryid}</td>
 						<td class="mono">{s.date}</td>
 						{#if showEstimates}<td class="mono right"
@@ -291,6 +298,26 @@
 	}
 	.legend-table tbody tr.dimmed td {
 		opacity: 0.4;
+	}
+
+	.btn-cell {
+		padding: 0.15rem 0.35rem;
+	}
+
+	.view-btn {
+		display: inline-block;
+		padding: 0.1rem 0.5rem;
+		font-size: 0.72rem;
+		border: 1px solid #4a6fa5;
+		border-radius: 3px;
+		color: #4a6fa5;
+		text-decoration: none;
+		white-space: nowrap;
+	}
+
+	.view-btn:hover {
+		background: #4a6fa5;
+		color: #fff;
 	}
 
 	.swatch {
