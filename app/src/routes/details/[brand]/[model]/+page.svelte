@@ -4,6 +4,7 @@
 	import PressureChart from "$lib/components/PressureChart.svelte";
 	import BreadcrumbBar from "$lib/components/BreadcrumbBar.svelte";
 	import NavStrip from "$lib/components/NavStrip.svelte";
+	import EstimatesSelect from "$lib/components/EstimatesSelect.svelte";
 	import {
 		interpolatePhysical,
 		estimateP00,
@@ -158,11 +159,7 @@
 					<option value="iaf">Zoom to IAF</option>
 					<option value="maxpressure">Zoom to max pressure</option>
 				</select>
-				<select class="estimates-select" bind:value={showEstimates}>
-					<option value="raw">Show raw data</option>
-					<option value="estimates">Raw + P00 & P100 estimates</option>
-					<option value="standardized">Standardized + P00 & P100 estimates</option>
-				</select>
+				<EstimatesSelect bind:value={showEstimates} />
 				<select class="export-select" onchange={(e) => { handleExport(e.currentTarget.value); e.currentTarget.value = ''; }}>
 					<option value="">Export ▾</option>
 					<option value="copy-chart">Copy chart</option>
@@ -293,14 +290,6 @@
 		cursor: pointer;
 	}
 
-	.estimates-select {
-		font-size: 0.8rem;
-		color: #444;
-		border: 1px solid #ccc;
-		border-radius: 4px;
-		padding: 0.2rem 0.4rem;
-		cursor: pointer;
-	}
 
 	.export-select {
 		font-size: 0.8rem;
