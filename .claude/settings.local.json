@@ -31,7 +31,13 @@
       "Bash(powershell -Command \"Remove-Item -Recurse -Force ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes\\\\models\\\\[brand]''; Remove-Item -Recurse -Force ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes\\\\pens\\\\[inventoryid]''; Remove-Item -Recurse -Force ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes\\\\sessions''\")",
       "Bash(powershell -Command \"Get-ChildItem -Recurse ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes'' | Select-Object FullName\")",
       "Bash(powershell -Command \"Remove-Item -Recurse -Force -LiteralPath ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes\\\\models\\\\[brand]''; Remove-Item -Recurse -Force -LiteralPath ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes\\\\pens\\\\[inventoryid]''\")",
-      "Bash(powershell -Command \"Set-Location ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app''; npm run build 2>&1\")"
+      "Bash(powershell -Command \"Set-Location ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app''; npm run build 2>&1\")",
+      "Bash(powershell -Command \":*)",
+      "Bash(powershell.exe -Command \"$f = ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes\\\\details\\\\[brand]\\\\[model]\\\\+page.svelte''; $c = [System.IO.File]::ReadAllText\\($f\\); $idx = $c.IndexOf\\(''fmtP\\(s.p01\\)''\\); Write-Host $c.Substring\\([Math]::Max\\(0,$idx-50\\), 350\\)\")",
+      "Bash(powershell.exe -File:*)",
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File \"C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\fix_model_page.ps1\")",
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File \"C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\fix_pen_view_btn.ps1\")",
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File \"C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\fix_pen_header.ps1\")"
     ]
   }
 }

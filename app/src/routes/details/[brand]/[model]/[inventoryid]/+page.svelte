@@ -1,4 +1,4 @@
-<script>
+﻿<script>
 	import { base } from "$app/paths";
 	import { allSessions } from "$lib/data.js";
 	import PressureChart from "$lib/components/PressureChart.svelte";
@@ -65,6 +65,7 @@
 			color: COLORS[i % COLORS.length],
 			date: s.date,
 			p00: estimateP00(s.records),
+			p01: interpolatePhysical(s.records, 1),
 			p05: interpolatePhysical(s.records, 5),
 			p10: interpolatePhysical(s.records, 10),
 			p25: interpolatePhysical(s.records, 25),
@@ -77,7 +78,7 @@
 	);
 
 	let hiddenLabels = $state(new Set());
-	let showEstimates = $state(true);
+	let showEstimates = $state('estimates');
 	let zoom = $state("normal");
 	let chartRef;
 
@@ -95,14 +96,26 @@
 		hiddenLabels = next;
 	}
 
+	function standardSampleRecords(s) {
+		return [
+			[s.p00, 0], [s.p01, 1], [s.p05, 5], [s.p10, 10], [s.p25, 25], [s.p50, 50],
+			[s.p75, 75], [s.p95, 95], [s.p99, 99], [s.p100, 100],
+		].filter(([x]) => x != null);
+	}
+
 	let visibleSeries = $derived(
 		allSeries
 			.filter((s) => !hiddenLabels.has(s.label))
-			.map((s) => ({
-				...s,
-				p00: showEstimates ? s.p00 : null,
-				p100: showEstimates ? s.p100 : null,
-			})),
+			.map((s) => {
+				if (showEstimates === 'standardized') {
+					return { ...s, records: standardSampleRecords(s), p00: null, p100: null };
+				}
+				return {
+					...s,
+					p00: showEstimates === 'estimates' ? s.p00 : null,
+					p100: showEstimates === 'estimates' ? s.p100 : null,
+				};
+			}),
 	);
 </script>
 
@@ -132,10 +145,11 @@
 					<option value="iaf">Zoom to IAF</option>
 					<option value="maxpressure">Zoom to max pressure</option>
 				</select>
-				<label class="estimates-toggle">
-					<input type="checkbox" bind:checked={showEstimates} />
-					Show P00 & P100 estimates
-				</label>
+				<select class="estimates-select" bind:value={showEstimates}>
+					<option value="raw">Show raw data</option>
+					<option value="estimates">Raw + P00 & P100 estimates</option>
+					<option value="standardized">Standardized + P00 & P100 estimates</option>
+				</select>
 				<select class="export-select" onchange={(e) => { handleExport(e.currentTarget.value); e.currentTarget.value = ''; }}>
 					<option value="">Export ▾</option>
 					<option value="copy-chart">Copy chart</option>
@@ -153,16 +167,18 @@
 					<tr>
 						<th class="centered">Show</th>
 						<th></th>
+						<th></th>
 						<th>Date</th>
-						{#if showEstimates}<th class="right">P00 (gf)</th>{/if}
-						<th class="right">P05 (gf)</th>
-						<th class="right">P10 (gf)</th>
-						<th class="right">P25 (gf)</th>
-						<th class="right">P50 (gf)</th>
-						<th class="right">P75 (gf)</th>
-						<th class="right">P95 (gf)</th>
-						<th class="right">P99 (gf)</th>
-						{#if showEstimates}<th class="right">P100 (gf)</th>{/if}
+						{#if showEstimates !== 'raw'}<th class="right">P00</th>{/if}
+						<th class="right">P01</th>
+						<th class="right">P05</th>
+						<th class="right">P10</th>
+						<th class="right">P25</th>
+						<th class="right">P50</th>
+						<th class="right">P75</th>
+						<th class="right">P95</th>
+						<th class="right">P99</th>
+						{#if showEstimates !== 'raw'}<th class="right">P100</th>{/if}
 					</tr>
 				</thead>
 				<tbody>
@@ -181,10 +197,17 @@
 									style="background: {s.color}"
 								></span></td
 							>
+							<td class="btn-cell">
+								<a
+									href="{base}/details/{encodeURIComponent(data.brand)}/{encodeURIComponent(data.model)}/{data.inventoryid}/{s.date}"
+									class="view-btn"
+								>View</a>
+							</td>
 							<td class="mono">{s.date}</td>
-							{#if showEstimates}<td class="mono right"
+							{#if showEstimates !== 'raw'}<td class="mono right"
 									>{fmtP(s.p00)}</td
 								>{/if}
+								<td class="mono right">{fmtP(s.p01)}</td>
 							<td class="mono right">{fmtP(s.p05)}</td>
 							<td class="mono right">{fmtP(s.p10)}</td>
 							<td class="mono right">{fmtP(s.p25)}</td>
@@ -192,7 +215,7 @@
 							<td class="mono right">{fmtP(s.p75)}</td>
 							<td class="mono right">{fmtP(s.p95)}</td>
 							<td class="mono right">{fmtP(s.p99)}</td>
-							{#if showEstimates}<td class="mono right"
+							{#if showEstimates !== 'raw'}<td class="mono right"
 									>{fmtP(s.p100)}</td
 								>{/if}
 						</tr>
@@ -259,14 +282,13 @@
 		cursor: pointer;
 	}
 
-	.estimates-toggle {
-		display: flex;
-		align-items: center;
-		gap: 0.35rem;
+	.estimates-select {
 		font-size: 0.8rem;
-		color: #555;
+		color: #444;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+		padding: 0.2rem 0.4rem;
 		cursor: pointer;
-		user-select: none;
 	}
 
 	.export-select {
@@ -305,6 +327,26 @@
 	}
 	.legend-table tbody tr.dimmed td {
 		opacity: 0.4;
+	}
+
+	.btn-cell {
+		padding: 0.15rem 0.35rem;
+	}
+
+	.view-btn {
+		display: inline-block;
+		padding: 0.1rem 0.5rem;
+		font-size: 0.72rem;
+		border: 1px solid #4a6fa5;
+		border-radius: 3px;
+		color: #4a6fa5;
+		text-decoration: none;
+		white-space: nowrap;
+	}
+
+	.view-btn:hover {
+		background: #4a6fa5;
+		color: #fff;
 	}
 
 	.swatch {
