@@ -34,29 +34,30 @@
 
 {#if session}
 	<div class="session-page">
-		<div class="nav-strip">
-			{#if prevSession}
-				<a href="{base}/sessions/{prevSession.sessionId}" class="nav-btn">
-					← {prevSession.inventoryid} · {prevSession.date}
-				</a>
-			{:else}
-				<span class="nav-btn faded">← First</span>
-			{/if}
-			<span class="nav-counter">{sessionIndex + 1} / {allSessions.length}</span>
-			{#if nextSession}
-				<a href="{base}/sessions/{nextSession.sessionId}" class="nav-btn">
-					{nextSession.inventoryid} · {nextSession.date} →
-				</a>
-			{:else}
-				<span class="nav-btn faded">Last →</span>
-			{/if}
+		<div class="page-header">
+			<BreadcrumbBar
+				brand={session.brand}
+				model={session.pen}
+				detail={[session.inventoryid, session.date, ...(session.notes ? [session.notes] : [])]}
+			/>
+			<div class="nav-strip">
+				{#if prevSession}
+					<a href="{base}/sessions/{prevSession.sessionId}" class="nav-btn">
+						← {prevSession.inventoryid} · {prevSession.date}
+					</a>
+				{:else}
+					<span class="nav-btn faded">← First</span>
+				{/if}
+				<span class="nav-counter">{sessionIndex + 1} / {allSessions.length}</span>
+				{#if nextSession}
+					<a href="{base}/sessions/{nextSession.sessionId}" class="nav-btn">
+						{nextSession.inventoryid} · {nextSession.date} →
+					</a>
+				{:else}
+					<span class="nav-btn faded">Last →</span>
+				{/if}
+			</div>
 		</div>
-
-		<BreadcrumbBar
-			brand={session.brand}
-			model={session.pen}
-			detail={[session.inventoryid, session.date, ...(session.notes ? [session.notes] : [])]}
-		/>
 
 		<div class="meta-grid">
 			<div class="meta-item">
@@ -108,12 +109,23 @@
 		max-width: 1200px;
 	}
 
-	.nav-strip {
+	.page-header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		margin-bottom: 1.25rem;
+		margin-bottom: 1.5rem;
+		gap: 1.5rem;
+	}
+	.page-header :global(.breadcrumb-bar) {
+		margin-bottom: 0;
+		flex: 1;
+	}
+
+	.nav-strip {
+		display: flex;
+		align-items: center;
 		gap: 0.5rem;
+		flex-shrink: 0;
 	}
 
 	.nav-btn {

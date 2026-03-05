@@ -99,29 +99,30 @@
 
 {#if pen}
 	<div class="pen-page">
-		<div class="nav-strip">
-			{#if prevPen}
-				<a href="{base}/pens/{prevPen.inventoryid}" class="nav-btn">
-					← {prevPen.inventoryid}
-				</a>
-			{:else}
-				<span class="nav-btn faded">← First</span>
-			{/if}
-			<span class="nav-counter">{penIndex + 1} / {allPens.length}</span>
-			{#if nextPen}
-				<a href="{base}/pens/{nextPen.inventoryid}" class="nav-btn">
-					{nextPen.inventoryid} →
-				</a>
-			{:else}
-				<span class="nav-btn faded">Last →</span>
-			{/if}
+		<div class="page-header">
+			<BreadcrumbBar
+				brand={pen.brand}
+				model={pen.pen}
+				detail={[pen.inventoryid, `${sessions.length} ${sessions.length === 1 ? 'session' : 'sessions'}`]}
+			/>
+			<div class="nav-strip">
+				{#if prevPen}
+					<a href="{base}/pens/{prevPen.inventoryid}" class="nav-btn">
+						← {prevPen.inventoryid}
+					</a>
+				{:else}
+					<span class="nav-btn faded">← First</span>
+				{/if}
+				<span class="nav-counter">{penIndex + 1} / {allPens.length}</span>
+				{#if nextPen}
+					<a href="{base}/pens/{nextPen.inventoryid}" class="nav-btn">
+						{nextPen.inventoryid} →
+					</a>
+				{:else}
+					<span class="nav-btn faded">Last →</span>
+				{/if}
+			</div>
 		</div>
-
-		<BreadcrumbBar
-			brand={pen.brand}
-			model={pen.pen}
-			detail={[pen.inventoryid, `${sessions.length} ${sessions.length === 1 ? 'session' : 'sessions'}`]}
-		/>
 
 		<div class="chart-area">
 			<div class="chart-header">
@@ -205,12 +206,23 @@
 		max-width: 1000px;
 	}
 
-	.nav-strip {
+	.page-header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		margin-bottom: 1.25rem;
+		margin-bottom: 1.5rem;
+		gap: 1.5rem;
+	}
+	.page-header :global(.breadcrumb-bar) {
+		margin-bottom: 0;
+		flex: 1;
+	}
+
+	.nav-strip {
+		display: flex;
+		align-items: center;
 		gap: 0.5rem;
+		flex-shrink: 0;
 	}
 
 	.nav-btn {

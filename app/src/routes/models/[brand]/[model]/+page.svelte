@@ -109,44 +109,39 @@
 
 {#if sessions.length > 0}
 	<div class="model-page">
-		<div class="nav-strip">
-			{#if prevModel}
-				<a
-					href="{base}/models/{encodeURIComponent(
-						prevModel.brand,
-					)}/{encodeURIComponent(prevModel.model)}"
-					class="nav-btn"
-				>
-					← {prevModel.brand} / {prevModel.model}
-				</a>
-			{:else}
-				<span class="nav-btn faded">← First</span>
-			{/if}
-			<span class="nav-counter"
-				>{modelIndex + 1} / {allModels.length}</span
-			>
-			{#if nextModel}
-				<a
-					href="{base}/models/{encodeURIComponent(
-						nextModel.brand,
-					)}/{encodeURIComponent(nextModel.model)}"
-					class="nav-btn"
-				>
-					{nextModel.brand} / {nextModel.model} →
-				</a>
-			{:else}
-				<span class="nav-btn faded">Last →</span>
-			{/if}
+		<div class="page-header">
+			<BreadcrumbBar
+				brand={data.brand}
+				model={data.model}
+				detail={[
+					`${new Set(sessions.map((s) => s.inventoryid)).size} pens`,
+					`${sessions.length} ${sessions.length === 1 ? 'session' : 'sessions'}`
+				]}
+			/>
+			<div class="nav-strip">
+				{#if prevModel}
+					<a
+						href="{base}/models/{encodeURIComponent(prevModel.brand)}/{encodeURIComponent(prevModel.model)}"
+						class="nav-btn"
+					>
+						← {prevModel.brand} / {prevModel.model}
+					</a>
+				{:else}
+					<span class="nav-btn faded">← First</span>
+				{/if}
+				<span class="nav-counter">{modelIndex + 1} / {allModels.length}</span>
+				{#if nextModel}
+					<a
+						href="{base}/models/{encodeURIComponent(nextModel.brand)}/{encodeURIComponent(nextModel.model)}"
+						class="nav-btn"
+					>
+						{nextModel.brand} / {nextModel.model} →
+					</a>
+				{:else}
+					<span class="nav-btn faded">Last →</span>
+				{/if}
+			</div>
 		</div>
-
-		<BreadcrumbBar
-			brand={data.brand}
-			model={data.model}
-			detail={[
-				`${new Set(sessions.map((s) => s.inventoryid)).size} pens`,
-				`${sessions.length} ${sessions.length === 1 ? 'session' : 'sessions'}`
-			]}
-		/>
 
 		<div class="chart-area">
 			<div class="chart-header">
@@ -219,7 +214,7 @@
 {:else}
 	<div class="not-found">
 		<p>No sessions found for <code>{data.brand} {data.model}</code>.</p>
-		<a href="{base}/pen-model">← Back to pen models</a>
+		<a href="{base}/models">← Back to pen models</a>
 	</div>
 {/if}
 
@@ -228,12 +223,23 @@
 		max-width: 1000px;
 	}
 
-	.nav-strip {
+	.page-header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		margin-bottom: 1.25rem;
+		margin-bottom: 1.5rem;
+		gap: 1.5rem;
+	}
+	.page-header :global(.breadcrumb-bar) {
+		margin-bottom: 0;
+		flex: 1;
+	}
+
+	.nav-strip {
+		display: flex;
+		align-items: center;
 		gap: 0.5rem;
+		flex-shrink: 0;
 	}
 
 	.nav-btn {
