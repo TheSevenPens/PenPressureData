@@ -112,7 +112,7 @@
 		<div class="nav-strip">
 			{#if prevModel}
 				<a
-					href="{base}/pen-model/{encodeURIComponent(
+					href="{base}/models/{encodeURIComponent(
 						prevModel.brand,
 					)}/{encodeURIComponent(prevModel.model)}"
 					class="nav-btn"
@@ -127,7 +127,7 @@
 			>
 			{#if nextModel}
 				<a
-					href="{base}/pen-model/{encodeURIComponent(
+					href="{base}/models/{encodeURIComponent(
 						nextModel.brand,
 					)}/{encodeURIComponent(nextModel.model)}"
 					class="nav-btn"

@@ -36,7 +36,7 @@
 	<div class="session-page">
 		<div class="nav-strip">
 			{#if prevSession}
-				<a href="{base}/session/{prevSession.sessionId}" class="nav-btn">
+				<a href="{base}/sessions/{prevSession.sessionId}" class="nav-btn">
 					← {prevSession.inventoryid} · {prevSession.date}
 				</a>
 			{:else}
@@ -44,7 +44,7 @@
 			{/if}
 			<span class="nav-counter">{sessionIndex + 1} / {allSessions.length}</span>
 			{#if nextSession}
-				<a href="{base}/session/{nextSession.sessionId}" class="nav-btn">
+				<a href="{base}/sessions/{nextSession.sessionId}" class="nav-btn">
 					{nextSession.inventoryid} · {nextSession.date} →
 				</a>
 			{:else}

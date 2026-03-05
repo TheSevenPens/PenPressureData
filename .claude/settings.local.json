@@ -24,7 +24,10 @@
       "Bash(python:*)",
       "Bash(conda info --envs)",
       "Bash(C:Userssevenanaconda3Scriptsconda.exe activate node1)",
-      "Bash(\"/c/Users/seven/anaconda3/Scripts/conda.exe\" activate node1)"
+      "Bash(\"/c/Users/seven/anaconda3/Scripts/conda.exe\" activate node1)",
+      "Bash(powershell -Command \"Move-Item ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes\\\\pen-model'' ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes\\\\model''\")",
+      "Bash(powershell -Command \"Move-Item ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes\\\\model'' ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes\\\\models''\")",
+      "Bash(powershell -Command \"Move-Item ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes\\\\session'' ''C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\PenPressureData\\\\app\\\\src\\\\routes\\\\sessions''\")"
     ]
   }
 }

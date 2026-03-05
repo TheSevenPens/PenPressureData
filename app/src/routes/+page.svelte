@@ -63,7 +63,7 @@
 				>
 					<td class="view-cell">
 						<a
-							href="{base}/session/{session.sessionId}"
+							href="{base}/sessions/{session.sessionId}"
 							class="view-btn"
 							onclick={(e) => e.stopPropagation()}
 						>View</a>

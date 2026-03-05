@@ -69,10 +69,10 @@
 				showLine: true,
 				tension: 0,
 				borderColor: s.color,
-				backgroundColor: s.color + "33",
+				backgroundColor: s.color,
 				borderWidth: 2,
-				pointRadius: 3,
-				pointHoverRadius: 5,
+				pointRadius: 2,
+				pointHoverRadius: 4,
 			});
 
 			// Dotted extrapolation line from P00 (y=0) to first measured point

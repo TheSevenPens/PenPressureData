@@ -5,7 +5,7 @@
 	let { children } = $props();
 
 	const tabs = [
-		{ label: "Pen Models", href: `${base}/pen-model` },
+		{ label: "Pen Models", href: `${base}/models` },
 		{ label: "Pens", href: `${base}/pens` },
 		{ label: "Sessions", href: `${base}/` },
 	];
@@ -13,7 +13,7 @@
 	function isActive(href) {
 		const path = $page.url.pathname;
 		if (href === `${base}/`)
-			return path === `${base}/` || path.startsWith(`${base}/session`);
+			return path === `${base}/` || path.startsWith(`${base}/sessions`);
 		if (href === `${base}/pens`)
 			return path === `${base}/pens` || path.startsWith(`${base}/pens/`);
 		return path.startsWith(href);
