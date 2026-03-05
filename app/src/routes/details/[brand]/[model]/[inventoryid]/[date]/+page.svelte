@@ -16,6 +16,14 @@
 	const COLOR = "#4a6fa5";
 
 	let zoom = $state("normal");
+	let chartRef;
+
+	function handleExport(action) {
+		if (action === 'copy-chart') chartRef?.copyChart();
+		else if (action === 'export-png') chartRef?.exportPng();
+		else if (action === 'copy-data') chartRef?.copyData();
+		else if (action === 'export-data') chartRef?.exportData();
+	}
 
 	// --- Session navigation ---
 	let sessionIndex = $derived(
@@ -96,8 +104,15 @@
 						<option value="iaf">Zoom to IAF</option>
 						<option value="maxpressure">Zoom to max pressure</option>
 					</select>
+					<select class="export-select" onchange={(e) => { handleExport(e.currentTarget.value); e.currentTarget.value = ''; }}>
+						<option value="">Export ▾</option>
+						<option value="copy-chart">Copy chart</option>
+						<option value="export-png">Export chart as PNG</option>
+						<option value="copy-data">Copy data</option>
+						<option value="export-data">Export chart data</option>
+					</select>
 				</div>
-				<PressureChart series={chartSeries} zoomMode={zoom} title="Pressure response for {session.brand} / {session.pen} / {session.inventoryid} / {session.date}" />
+				<PressureChart bind:this={chartRef} series={chartSeries} zoomMode={zoom} title="Pressure response for {session.brand} / {session.pen} / {session.inventoryid} / {session.date}" />
 			</div>
 		</div>
 	</div>
@@ -186,6 +201,16 @@
 		border-radius: 4px;
 		padding: 0.2rem 0.4rem;
 		cursor: pointer;
+	}
+
+	.export-select {
+		font-size: 0.8rem;
+		color: #444;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+		padding: 0.2rem 0.4rem;
+		cursor: pointer;
+		margin-left: auto;
 	}
 
 	.chart-section {

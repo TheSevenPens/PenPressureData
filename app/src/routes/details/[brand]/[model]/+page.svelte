@@ -89,6 +89,14 @@
 	let hiddenLabels = $state(new Set());
 	let showEstimates = $state(true);
 	let zoom = $state("normal");
+	let chartRef;
+
+	function handleExport(action) {
+		if (action === 'copy-chart') chartRef?.copyChart();
+		else if (action === 'export-png') chartRef?.exportPng();
+		else if (action === 'copy-data') chartRef?.copyData();
+		else if (action === 'export-data') chartRef?.exportData();
+	}
 
 	function toggleSeries(label) {
 		const next = new Set(hiddenLabels);
@@ -141,8 +149,15 @@
 					<input type="checkbox" bind:checked={showEstimates} />
 					Show P00 & P100 estimates
 				</label>
+				<select class="export-select" onchange={(e) => { handleExport(e.currentTarget.value); e.currentTarget.value = ''; }}>
+					<option value="">Export ▾</option>
+					<option value="copy-chart">Copy chart</option>
+					<option value="export-png">Export chart as PNG</option>
+					<option value="copy-data">Copy data</option>
+					<option value="export-data">Export chart data</option>
+				</select>
 			</div>
-			<PressureChart series={visibleSeries} zoomMode={zoom} title="Pressure response for {data.brand} / {data.model}" />
+			<PressureChart bind:this={chartRef} series={visibleSeries} zoomMode={zoom} title="Pressure response for {data.brand} / {data.model}" />
 		</div>
 
 		<table class="legend-table">
@@ -270,6 +285,16 @@
 		color: #555;
 		cursor: pointer;
 		user-select: none;
+	}
+
+	.export-select {
+		font-size: 0.8rem;
+		color: #444;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+		padding: 0.2rem 0.4rem;
+		cursor: pointer;
+		margin-left: auto;
 	}
 
 	.legend-table {
