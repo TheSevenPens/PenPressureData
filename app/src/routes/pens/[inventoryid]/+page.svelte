@@ -3,6 +3,7 @@
 	import { allSessions } from "$lib/data.js";
 	import PressureChart from "$lib/components/PressureChart.svelte";
 	import BreadcrumbBar from "$lib/components/BreadcrumbBar.svelte";
+	import NavStrip from "$lib/components/NavStrip.svelte";
 	import {
 		interpolatePhysical,
 		estimateP00,
@@ -105,23 +106,14 @@
 				model={pen.pen}
 				detail={[pen.inventoryid, `${sessions.length} ${sessions.length === 1 ? 'session' : 'sessions'}`]}
 			/>
-			<div class="nav-strip">
-				{#if prevPen}
-					<a href="{base}/pens/{prevPen.inventoryid}" class="nav-btn">
-						← {prevPen.inventoryid}
-					</a>
-				{:else}
-					<span class="nav-btn faded">← First</span>
-				{/if}
-				<span class="nav-counter">{penIndex + 1} / {allPens.length}</span>
-				{#if nextPen}
-					<a href="{base}/pens/{nextPen.inventoryid}" class="nav-btn">
-						{nextPen.inventoryid} →
-					</a>
-				{:else}
-					<span class="nav-btn faded">Last →</span>
-				{/if}
-			</div>
+			<NavStrip
+				index={penIndex}
+				total={allPens.length}
+				prevHref={prevPen ? `${base}/pens/${prevPen.inventoryid}` : null}
+				prevLabel={prevPen ? prevPen.inventoryid : ''}
+				nextHref={nextPen ? `${base}/pens/${nextPen.inventoryid}` : null}
+				nextLabel={nextPen ? nextPen.inventoryid : ''}
+			/>
 		</div>
 
 		<div class="chart-area">
@@ -216,43 +208,6 @@
 	.page-header :global(.breadcrumb-bar) {
 		margin-bottom: 0;
 		flex: 1;
-	}
-
-	.nav-strip {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		flex-shrink: 0;
-	}
-
-	.nav-btn {
-		display: inline-block;
-		font-size: 0.8rem;
-		padding: 0.25rem 0.6rem;
-		border-radius: 4px;
-		border: 1px solid #ddd;
-		background: #f8f8f8;
-		color: #4a6fa5;
-		text-decoration: none;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		max-width: 280px;
-	}
-	.nav-btn:hover {
-		background: #eef2f8;
-		border-color: #b0c4de;
-	}
-	.nav-btn.faded {
-		color: #ccc;
-		pointer-events: none;
-	}
-
-	.nav-counter {
-		font-size: 0.75rem;
-		color: #aaa;
-		white-space: nowrap;
-		flex-shrink: 0;
 	}
 
 	.chart-area {

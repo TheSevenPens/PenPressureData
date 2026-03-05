@@ -4,6 +4,7 @@
 	import PressureChart from "$lib/components/PressureChart.svelte";
 	import RecordsTable from "$lib/components/RecordsTable.svelte";
 	import BreadcrumbBar from "$lib/components/BreadcrumbBar.svelte";
+	import NavStrip from "$lib/components/NavStrip.svelte";
 
 	let { data } = $props();
 	let session = $derived(sessionById[data.id]);
@@ -40,23 +41,14 @@
 				model={session.pen}
 				detail={[session.inventoryid, session.date, ...(session.notes ? [session.notes] : [])]}
 			/>
-			<div class="nav-strip">
-				{#if prevSession}
-					<a href="{base}/sessions/{prevSession.sessionId}" class="nav-btn">
-						← {prevSession.inventoryid} · {prevSession.date}
-					</a>
-				{:else}
-					<span class="nav-btn faded">← First</span>
-				{/if}
-				<span class="nav-counter">{sessionIndex + 1} / {allSessions.length}</span>
-				{#if nextSession}
-					<a href="{base}/sessions/{nextSession.sessionId}" class="nav-btn">
-						{nextSession.inventoryid} · {nextSession.date} →
-					</a>
-				{:else}
-					<span class="nav-btn faded">Last →</span>
-				{/if}
-			</div>
+			<NavStrip
+				index={sessionIndex}
+				total={allSessions.length}
+				prevHref={prevSession ? `${base}/sessions/${prevSession.sessionId}` : null}
+				prevLabel={prevSession ? `${prevSession.inventoryid} · ${prevSession.date}` : ''}
+				nextHref={nextSession ? `${base}/sessions/${nextSession.sessionId}` : null}
+				nextLabel={nextSession ? `${nextSession.inventoryid} · ${nextSession.date}` : ''}
+			/>
 		</div>
 
 		<div class="meta-grid">
@@ -121,37 +113,6 @@
 		flex: 1;
 	}
 
-	.nav-strip {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		flex-shrink: 0;
-	}
-
-	.nav-btn {
-		display: inline-block;
-		font-size: 0.8rem;
-		padding: 0.25rem 0.6rem;
-		border-radius: 4px;
-		border: 1px solid #ddd;
-		background: #f8f8f8;
-		color: #4a6fa5;
-		text-decoration: none;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		max-width: 280px;
-	}
-	.nav-btn:hover { background: #eef2f8; border-color: #b0c4de; }
-	.nav-btn.faded { color: #ccc; pointer-events: none; }
-
-	.nav-counter {
-		font-size: 0.75rem;
-		color: #aaa;
-		white-space: nowrap;
-		flex-shrink: 0;
-	}
-
 	.meta-grid {
 		display: flex;
 		gap: 1.5rem;
@@ -182,7 +143,6 @@
 		color: #333;
 	}
 
-	/* Side-by-side layout */
 	.body-layout {
 		display: grid;
 		grid-template-columns: auto 1fr;
