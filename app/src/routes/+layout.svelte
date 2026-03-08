@@ -36,7 +36,7 @@
 </script>
 
 <header>
-	<h1>SevenPens Pen Pressure Data V0.11</h1>
+	<h1>SevenPens Pen Pressure Data V0.12</h1>
 </header>
 
 <nav class="tab-bar">
