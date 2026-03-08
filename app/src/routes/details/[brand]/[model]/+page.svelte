@@ -7,6 +7,7 @@
 	import ZoomSelect from "$lib/components/ZoomSelect.svelte";
 	import EstimatesSelect from "$lib/components/EstimatesSelect.svelte";
 	import ChartLegendTable from "$lib/components/ChartLegendTable.svelte";
+	import ModelStats from "$lib/components/ModelStats.svelte";
 	import { fmtP } from "$lib/interpolate.js";
 
 	const COLORS = [
@@ -166,6 +167,8 @@
 					: ""}
 			/>
 		</div>
+
+		<ModelStats {sessions} />
 
 		<div class="chart-area">
 			<div class="chart-header">
