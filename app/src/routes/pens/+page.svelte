@@ -98,7 +98,6 @@
 			<table class="pens-table">
 				<thead>
 					<tr>
-						<th></th>
 						<th
 							class="sortable"
 							onclick={() => toggleSort("brand")}
@@ -136,19 +135,24 @@
 				<tbody>
 					{#each filteredPens as pen}
 						<tr>
-							<td class="btn-cell">
+							<td>{pen.brand}</td>
+							<td>
+								<a
+									href="{base}/details/{encodeURIComponent(
+										pen.brand,
+									)}/{encodeURIComponent(pen.model)}"
+									>{pen.model}</a
+								>
+							</td>
+							<td class="mono">
 								<a
 									href="{base}/details/{encodeURIComponent(
 										pen.brand,
 									)}/{encodeURIComponent(
 										pen.model,
-									)}/{pen.inventoryid}"
-									class="view-btn">View</a
+									)}/{pen.inventoryid}">{pen.inventoryid}</a
 								>
 							</td>
-							<td>{pen.brand}</td>
-							<td>{pen.model}</td>
-							<td class="mono">{pen.inventoryid}</td>
 							<td class="num">{pen.count}</td>
 						</tr>
 					{/each}
@@ -239,26 +243,6 @@
 	.pens-table tbody td {
 		padding: 0.25rem 1rem;
 		border-bottom: 1px solid #eee;
-	}
-
-	.btn-cell {
-		padding: 0.25rem 0.5rem;
-	}
-
-	.view-btn {
-		display: inline-block;
-		padding: 0.15rem 0.6rem;
-		font-size: 0.75rem;
-		border: 1px solid #4a6fa5;
-		border-radius: 3px;
-		color: #4a6fa5;
-		text-decoration: none;
-		white-space: nowrap;
-	}
-
-	.view-btn:hover {
-		background: #4a6fa5;
-		color: #fff;
 	}
 
 	.num {

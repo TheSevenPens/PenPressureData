@@ -99,7 +99,6 @@
 			<table class="models-table">
 				<thead>
 					<tr>
-						<th></th>
 						<th
 							class="sortable"
 							onclick={() => toggleSort("brand")}
@@ -137,16 +136,15 @@
 				<tbody>
 					{#each filteredModels as m}
 						<tr>
-							<td class="btn-cell">
+							<td>{m.brand}</td>
+							<td>
 								<a
 									href="{base}/details/{encodeURIComponent(
 										m.brand,
 									)}/{encodeURIComponent(m.model)}"
-									class="view-btn">View</a
+									>{m.model}</a
 								>
 							</td>
-							<td>{m.brand}</td>
-							<td>{m.model}</td>
 							<td class="num">{m.pens}</td>
 							<td class="num">{m.sessions}</td>
 						</tr>
@@ -238,26 +236,6 @@
 	.models-table tbody td {
 		padding: 0.25rem 1rem;
 		border-bottom: 1px solid #eee;
-	}
-
-	.btn-cell {
-		padding: 0.25rem 0.5rem;
-	}
-
-	.view-btn {
-		display: inline-block;
-		padding: 0.15rem 0.6rem;
-		font-size: 0.75rem;
-		border: 1px solid #4a6fa5;
-		border-radius: 3px;
-		color: #4a6fa5;
-		text-decoration: none;
-		white-space: nowrap;
-	}
-
-	.view-btn:hover {
-		background: #4a6fa5;
-		color: #fff;
 	}
 
 	.num {

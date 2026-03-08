@@ -59,7 +59,6 @@
 			<table>
 				<thead>
 					<tr>
-						<th></th>
 						<th>Brand</th>
 						<th>Model</th>
 						<th>Inventory ID</th>
@@ -77,21 +76,39 @@
 								session.sessionId}
 							onclick={() => toggleSession(session.sessionId)}
 						>
-							<td class="view-cell">
+							<td>{session.brand}</td>
+							<td>
+								<a
+									href="{base}/details/{encodeURIComponent(
+										session.brand,
+									)}/{encodeURIComponent(session.pen)}"
+									onclick={(e) => e.stopPropagation()}
+								>
+									{session.pen}
+								</a>
+							</td>
+							<td class="mono">
+								<a
+									href="{base}/details/{encodeURIComponent(
+										session.brand,
+									)}/{encodeURIComponent(
+										session.pen,
+									)}/{session.inventoryid}"
+									onclick={(e) => e.stopPropagation()}
+									>{session.inventoryid}</a
+								>
+							</td>
+							<td class="mono">
 								<a
 									href="{base}/details/{encodeURIComponent(
 										session.brand,
 									)}/{encodeURIComponent(
 										session.pen,
 									)}/{session.inventoryid}/{session.date}"
-									class="view-btn"
-									onclick={(e) => e.stopPropagation()}>View</a
+									onclick={(e) => e.stopPropagation()}
+									>{session.date}</a
 								>
 							</td>
-							<td>{session.brand}</td>
-							<td>{session.pen}</td>
-							<td class="mono">{session.inventoryid}</td>
-							<td class="mono">{session.date}</td>
 							<td>{session.tablet}</td>
 							<td>{session.driver}</td>
 							<td class="num">{session.records.length}</td>
@@ -99,7 +116,7 @@
 
 						{#if expandedSessionId === session.sessionId}
 							<tr class="records-row">
-								<td colspan="8">
+								<td colspan="7">
 									<div class="records-wrap">
 										<table class="records-table">
 											<thead>
@@ -250,30 +267,6 @@
 	.records-table tbody td {
 		font-size: 0.8rem;
 		padding: 0.25rem 0.75rem;
-	}
-
-	.view-cell {
-		width: 1px;
-		white-space: nowrap;
-	}
-
-	.view-btn {
-		display: inline-block;
-		padding: 0.2rem 0.6rem;
-		font-size: 0.78rem;
-		font-weight: 500;
-		color: #4a6fa5;
-		border: 1px solid #c0cfe8;
-		border-radius: 4px;
-		text-decoration: none;
-		background: #f0f5ff;
-		white-space: nowrap;
-	}
-
-	.view-btn:hover {
-		background: #4a6fa5;
-		color: #fff;
-		border-color: #4a6fa5;
 	}
 
 	.mono {
