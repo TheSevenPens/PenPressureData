@@ -8,12 +8,7 @@
 	import ZoomSelect from "$lib/components/ZoomSelect.svelte";
 	import EstimatesSelect from "$lib/components/EstimatesSelect.svelte";
 	import ChartLegendTable from "$lib/components/ChartLegendTable.svelte";
-	import {
-		interpolatePhysical,
-		estimateP00,
-		estimateP100,
-		fmtP,
-	} from "$lib/interpolate.js";
+	import { fmtP } from "$lib/interpolate.js";
 
 	let { data } = $props();
 	let session = $derived(
@@ -89,23 +84,7 @@
 						color: COLOR,
 						inventoryid: session.inventoryid,
 						date: session.date,
-						p00: estimateP00(session.records),
-						p01: interpolatePhysical(session.records, 1),
-						p05: interpolatePhysical(session.records, 5),
-						p10: interpolatePhysical(session.records, 10),
-						p20: interpolatePhysical(session.records, 20),
-						p25: interpolatePhysical(session.records, 25),
-						p30: interpolatePhysical(session.records, 30),
-						p40: interpolatePhysical(session.records, 40),
-						p50: interpolatePhysical(session.records, 50),
-						p60: interpolatePhysical(session.records, 60),
-						p70: interpolatePhysical(session.records, 70),
-						p75: interpolatePhysical(session.records, 75),
-						p80: interpolatePhysical(session.records, 80),
-						p90: interpolatePhysical(session.records, 90),
-						p95: interpolatePhysical(session.records, 95),
-						p99: interpolatePhysical(session.records, 99),
-						p100: estimateP100(session.records),
+						...session.pValues,
 					},
 				]
 			: [],
@@ -184,7 +163,10 @@
 		<div class="body-layout">
 			<div class="records-section">
 				<h2>Data</h2>
-				<RecordsTable records={session.records} />
+				<RecordsTable
+					records={session.records}
+					pValues={session.pValues}
+				/>
 			</div>
 
 			<div class="chart-section">

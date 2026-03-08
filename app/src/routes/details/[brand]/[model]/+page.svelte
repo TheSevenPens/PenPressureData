@@ -7,12 +7,7 @@
 	import ZoomSelect from "$lib/components/ZoomSelect.svelte";
 	import EstimatesSelect from "$lib/components/EstimatesSelect.svelte";
 	import ChartLegendTable from "$lib/components/ChartLegendTable.svelte";
-	import {
-		interpolatePhysical,
-		estimateP00,
-		estimateP100,
-		fmtP,
-	} from "$lib/interpolate.js";
+	import { fmtP } from "$lib/interpolate.js";
 
 	const COLORS = [
 		"#4a6fa5",
@@ -76,23 +71,7 @@
 				color: colorMap[s.inventoryid],
 				inventoryid: s.inventoryid,
 				date: s.date,
-				p00: estimateP00(s.records),
-				p01: interpolatePhysical(s.records, 1),
-				p05: interpolatePhysical(s.records, 5),
-				p10: interpolatePhysical(s.records, 10),
-				p20: interpolatePhysical(s.records, 20),
-				p25: interpolatePhysical(s.records, 25),
-				p30: interpolatePhysical(s.records, 30),
-				p40: interpolatePhysical(s.records, 40),
-				p50: interpolatePhysical(s.records, 50),
-				p60: interpolatePhysical(s.records, 60),
-				p70: interpolatePhysical(s.records, 70),
-				p75: interpolatePhysical(s.records, 75),
-				p80: interpolatePhysical(s.records, 80),
-				p90: interpolatePhysical(s.records, 90),
-				p95: interpolatePhysical(s.records, 95),
-				p99: interpolatePhysical(s.records, 99),
-				p100: estimateP100(s.records),
+				...s.pValues,
 			}));
 		})(),
 	);

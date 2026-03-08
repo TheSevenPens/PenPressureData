@@ -1,13 +1,8 @@
 <script>
-	import {
-		interpolatePhysical,
-		estimateP00,
-		estimateP100,
-		fmtP,
-	} from "../interpolate.js";
+	import { fmtP } from "../interpolate.js";
 
-	/** @type {{ records: Array<[number, number]> }} */
-	let { records } = $props();
+	/** @type {{ records: Array<[number, number]>, pValues?: Record<string, number|null> }} */
+	let { records, pValues } = $props();
 
 	const estimatedPercents = [
 		0, 1, 5, 10, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90, 95, 99, 100,
@@ -31,12 +26,9 @@
 			</tr>
 		{/each}
 		{#each estimatedPercents as pxx}
-			{@const est =
-				pxx === 0
-					? estimateP00(records)
-					: pxx === 100
-						? estimateP100(records)
-						: interpolatePhysical(records, pxx)}
+			{@const pKey =
+				pxx === 100 ? "p100" : pxx < 10 ? `p0${pxx}` : `p${pxx}`}
+			{@const est = pValues ? pValues[pKey] : null}
 			{#if est !== null}
 				<tr class="estimate-row">
 					<td class="num dim">P{pxx < 10 ? "0" + pxx : pxx}</td>
