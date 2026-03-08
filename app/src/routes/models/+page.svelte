@@ -1,46 +1,58 @@
 <script>
-	import { base } from '$app/paths';
-	import { allSessions } from '$lib/data.js';
-	import BrandFilter from '$lib/components/BrandFilter.svelte';
-	import ModelFilter from '$lib/components/ModelFilter.svelte';
+	import { base } from "$app/paths";
+	import { allSessions } from "$lib/data.js";
+	import BrandFilter from "$lib/components/BrandFilter.svelte";
+	import ModelFilter from "$lib/components/ModelFilter.svelte";
 
 	const allModels = (() => {
 		const map = {};
 		for (const s of allSessions) {
 			const key = `${s.brand}||${s.pen}`;
 			if (!map[key]) {
-				map[key] = { brand: s.brand, model: s.pen, pens: new Set(), sessions: 0 };
+				map[key] = {
+					brand: s.brand,
+					model: s.pen,
+					pens: new Set(),
+					sessions: 0,
+				};
 			}
 			map[key].pens.add(s.inventoryid);
 			map[key].sessions++;
 		}
 		return Object.values(map)
 			.map(({ pens, ...rest }) => ({ ...rest, pens: pens.size }))
-			.sort((a, b) => a.brand.localeCompare(b.brand) || a.model.localeCompare(b.model));
+			.sort(
+				(a, b) =>
+					a.brand.localeCompare(b.brand) ||
+					a.model.localeCompare(b.model),
+			);
 	})();
 
-	let selectedBrand = $state('');
-	let selectedModel = $state('');
+	let selectedBrand = $state("");
+	let selectedModel = $state("");
 
 	function onBrandChange() {
-		selectedModel = '';
+		selectedModel = "";
 	}
 
 	let filteredModels = $derived(
-		allModels.filter(m =>
-			(!selectedBrand || m.brand === selectedBrand) &&
-			(!selectedModel || m.model === selectedModel)
-		)
+		allModels.filter(
+			(m) =>
+				(!selectedBrand || m.brand === selectedBrand) &&
+				(!selectedModel || m.model === selectedModel),
+		),
 	);
 </script>
 
 <div class="models-page">
 	<div class="controls">
-		<div class="filter-row">
-			<BrandFilter bind:selectedBrand onchange={onBrandChange} />
-			<span class="count">{filteredModels.length} model{filteredModels.length !== 1 ? 's' : ''}</span>
-		</div>
-		<ModelFilter bind:selectedModel selectedBrand={selectedBrand} />
+		<BrandFilter bind:selectedBrand onchange={onBrandChange} />
+		<ModelFilter bind:selectedModel {selectedBrand} />
+		<span class="count"
+			>{filteredModels.length} model{filteredModels.length !== 1
+				? "s"
+				: ""}</span
+		>
 	</div>
 
 	<table class="models-table">
@@ -57,7 +69,12 @@
 			{#each filteredModels as m}
 				<tr>
 					<td class="btn-cell">
-						<a href="{base}/details/{encodeURIComponent(m.brand)}/{encodeURIComponent(m.model)}" class="view-btn">View</a>
+						<a
+							href="{base}/details/{encodeURIComponent(
+								m.brand,
+							)}/{encodeURIComponent(m.model)}"
+							class="view-btn">View</a
+						>
 					</td>
 					<td>{m.brand}</td>
 					<td>{m.model}</td>
@@ -80,13 +97,6 @@
 		align-items: flex-start;
 		gap: 0.5rem;
 		margin-bottom: 1rem;
-	}
-
-	.filter-row {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-		flex-wrap: wrap;
 	}
 
 	.count {

@@ -1,11 +1,11 @@
 <script>
-	import { base } from '$app/paths';
-	import { allSessions } from '$lib/data.js';
-	import BrandFilter from '$lib/components/BrandFilter.svelte';
-	import ModelFilter from '$lib/components/ModelFilter.svelte';
+	import { base } from "$app/paths";
+	import { allSessions } from "$lib/data.js";
+	import BrandFilter from "$lib/components/BrandFilter.svelte";
+	import ModelFilter from "$lib/components/ModelFilter.svelte";
 
-	let selectedBrand = $state('');
-	let selectedModel = $state('');
+	let selectedBrand = $state("");
+	let selectedModel = $state("");
 	let expandedSessionId = $state(null);
 
 	let filteredSessions = $derived(
@@ -13,11 +13,11 @@
 			if (selectedBrand && s.brand !== selectedBrand) return false;
 			if (selectedModel && s.pen !== selectedModel) return false;
 			return true;
-		})
+		}),
 	);
 
 	function onBrandChange() {
-		selectedModel = '';
+		selectedModel = "";
 		expandedSessionId = null;
 	}
 
@@ -31,11 +31,13 @@
 </script>
 
 <div class="controls">
-	<div class="filter-row">
-		<BrandFilter bind:selectedBrand onchange={onBrandChange} />
-		<span class="count">{filteredSessions.length} session{filteredSessions.length !== 1 ? 's' : ''}</span>
-	</div>
-	<ModelFilter bind:selectedModel selectedBrand={selectedBrand} onchange={onModelChange} />
+	<BrandFilter bind:selectedBrand onchange={onBrandChange} />
+	<ModelFilter bind:selectedModel {selectedBrand} onchange={onModelChange} />
+	<span class="count"
+		>{filteredSessions.length} session{filteredSessions.length !== 1
+			? "s"
+			: ""}</span
+	>
 </div>
 
 <div class="table-wrap">
@@ -63,10 +65,14 @@
 				>
 					<td class="view-cell">
 						<a
-							href="{base}/details/{encodeURIComponent(session.brand)}/{encodeURIComponent(session.pen)}/{session.inventoryid}/{session.date}"
+							href="{base}/details/{encodeURIComponent(
+								session.brand,
+							)}/{encodeURIComponent(
+								session.pen,
+							)}/{session.inventoryid}/{session.date}"
 							class="view-btn"
-							onclick={(e) => e.stopPropagation()}
-						>View</a>
+							onclick={(e) => e.stopPropagation()}>View</a
+						>
 					</td>
 					<td>{session.brand}</td>
 					<td>{session.pen}</td>
@@ -117,13 +123,6 @@
 		align-items: flex-start;
 		gap: 0.5rem;
 		margin-bottom: 1rem;
-	}
-
-	.filter-row {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-		flex-wrap: wrap;
 	}
 
 	.count {
