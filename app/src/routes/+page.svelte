@@ -30,99 +30,154 @@
 	}
 </script>
 
-<div class="controls">
-	<BrandFilter bind:selectedBrand onchange={onBrandChange} />
-	<ModelFilter bind:selectedModel {selectedBrand} onchange={onModelChange} />
-	<span class="count"
-		>{filteredSessions.length} session{filteredSessions.length !== 1
-			? "s"
-			: ""}</span
-	>
-</div>
+<div class="layout-grid">
+	<div class="sidebar">
+		<div class="filter-box">
+			<h3>Brand</h3>
+			<BrandFilter bind:selectedBrand onchange={onBrandChange} />
+		</div>
+		<div class="filter-box">
+			<h3>Model</h3>
+			<ModelFilter
+				bind:selectedModel
+				{selectedBrand}
+				onchange={onModelChange}
+			/>
+		</div>
+	</div>
 
-<div class="table-wrap">
-	<table>
-		<thead>
-			<tr>
-				<th></th>
-				<th>Brand</th>
-				<th>Model</th>
-				<th>Inventory ID</th>
-				<th>Date</th>
-				<th>Tablet</th>
-				<th>Driver</th>
-				<th>OS</th>
-				<th class="num">Records</th>
-				<th>Notes</th>
-			</tr>
-		</thead>
-		<tbody>
-			{#each filteredSessions as session (session.sessionId)}
-				<tr
-					class="session-row"
-					class:expanded={expandedSessionId === session.sessionId}
-					onclick={() => toggleSession(session.sessionId)}
-				>
-					<td class="view-cell">
-						<a
-							href="{base}/details/{encodeURIComponent(
-								session.brand,
-							)}/{encodeURIComponent(
-								session.pen,
-							)}/{session.inventoryid}/{session.date}"
-							class="view-btn"
-							onclick={(e) => e.stopPropagation()}>View</a
-						>
-					</td>
-					<td>{session.brand}</td>
-					<td>{session.pen}</td>
-					<td class="mono">{session.inventoryid}</td>
-					<td class="mono">{session.date}</td>
-					<td>{session.tablet}</td>
-					<td>{session.driver}</td>
-					<td>{session.os}</td>
-					<td class="num">{session.records.length}</td>
-					<td>{session.notes}</td>
-				</tr>
+	<div class="main-column">
+		<div class="controls">
+			<span class="count"
+				>{filteredSessions.length} session{filteredSessions.length !== 1
+					? "s"
+					: ""}</span
+			>
+		</div>
 
-				{#if expandedSessionId === session.sessionId}
-					<tr class="records-row">
-						<td colspan="10">
-							<div class="records-wrap">
-								<table class="records-table">
-									<thead>
-										<tr>
-											<th class="num">#</th>
-											<th class="num">Physical (gf)</th>
-											<th class="num">Logical (%)</th>
-										</tr>
-									</thead>
-									<tbody>
-										{#each session.records as [gf, pct], i}
-											<tr>
-												<td class="num dim">{i + 1}</td>
-												<td class="num">{gf}</td>
-												<td class="num">{pct}</td>
-											</tr>
-										{/each}
-									</tbody>
-								</table>
-							</div>
-						</td>
+		<div class="table-wrap">
+			<table>
+				<thead>
+					<tr>
+						<th></th>
+						<th>Brand</th>
+						<th>Model</th>
+						<th>Inventory ID</th>
+						<th>Date</th>
+						<th>Tablet</th>
+						<th>Driver</th>
+						<th class="num">Records</th>
 					</tr>
-				{/if}
-			{/each}
-		</tbody>
-	</table>
+				</thead>
+				<tbody>
+					{#each filteredSessions as session (session.sessionId)}
+						<tr
+							class="session-row"
+							class:expanded={expandedSessionId ===
+								session.sessionId}
+							onclick={() => toggleSession(session.sessionId)}
+						>
+							<td class="view-cell">
+								<a
+									href="{base}/details/{encodeURIComponent(
+										session.brand,
+									)}/{encodeURIComponent(
+										session.pen,
+									)}/{session.inventoryid}/{session.date}"
+									class="view-btn"
+									onclick={(e) => e.stopPropagation()}>View</a
+								>
+							</td>
+							<td>{session.brand}</td>
+							<td>{session.pen}</td>
+							<td class="mono">{session.inventoryid}</td>
+							<td class="mono">{session.date}</td>
+							<td>{session.tablet}</td>
+							<td>{session.driver}</td>
+							<td class="num">{session.records.length}</td>
+						</tr>
+
+						{#if expandedSessionId === session.sessionId}
+							<tr class="records-row">
+								<td colspan="8">
+									<div class="records-wrap">
+										<table class="records-table">
+											<thead>
+												<tr>
+													<th class="num">#</th>
+													<th class="num"
+														>Physical (gf)</th
+													>
+													<th class="num"
+														>Logical (%)</th
+													>
+												</tr>
+											</thead>
+											<tbody>
+												{#each session.records as [gf, pct], i}
+													<tr>
+														<td class="num dim"
+															>{i + 1}</td
+														>
+														<td class="num">{gf}</td
+														>
+														<td class="num"
+															>{pct}</td
+														>
+													</tr>
+												{/each}
+											</tbody>
+										</table>
+									</div>
+								</td>
+							</tr>
+						{/if}
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	</div>
 </div>
 
 <style>
-	.controls {
+	.layout-grid {
+		display: grid;
+		grid-template-columns: 300px 1fr;
+		gap: 2rem;
+		align-items: start;
+	}
+
+	@media (max-width: 900px) {
+		.layout-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	.sidebar {
 		display: flex;
 		flex-direction: column;
-		align-items: flex-start;
-		gap: 0.5rem;
-		margin-bottom: 1rem;
+		gap: 1.5rem;
+	}
+
+	.filter-box {
+		background: #fcfcfc;
+		border: 1px solid #e0e0e0;
+		border-radius: 6px;
+		padding: 1rem;
+	}
+
+	.filter-box h3 {
+		margin: 0 0 0.75rem 0;
+		font-size: 0.9rem;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		color: #555;
+	}
+
+	.controls {
+		display: flex;
+		align-items: center;
+		margin-bottom: 0.75rem;
 	}
 
 	.count {

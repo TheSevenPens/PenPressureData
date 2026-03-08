@@ -42,47 +42,60 @@
 </script>
 
 <div class="pens-page">
-	<div class="controls">
-		<BrandFilter bind:selectedBrand onchange={onBrandChange} />
-		<ModelFilter bind:selectedModel {selectedBrand} />
-		<span class="count"
-			>{filteredPens.length} pen{filteredPens.length !== 1
-				? "s"
-				: ""}</span
-		>
-	</div>
+	<div class="layout-grid">
+		<div class="sidebar">
+			<div class="filter-box">
+				<h3>Brand</h3>
+				<BrandFilter bind:selectedBrand onchange={onBrandChange} />
+			</div>
+			<div class="filter-box">
+				<h3>Model</h3>
+				<ModelFilter bind:selectedModel {selectedBrand} />
+			</div>
+		</div>
 
-	<table class="pens-table">
-		<thead>
-			<tr>
-				<th></th>
-				<th>Brand</th>
-				<th>Model</th>
-				<th>Inventory ID</th>
-				<th class="num">Sessions</th>
-			</tr>
-		</thead>
-		<tbody>
-			{#each filteredPens as pen}
-				<tr>
-					<td class="btn-cell">
-						<a
-							href="{base}/details/{encodeURIComponent(
-								pen.brand,
-							)}/{encodeURIComponent(
-								pen.model,
-							)}/{pen.inventoryid}"
-							class="view-btn">View</a
-						>
-					</td>
-					<td>{pen.brand}</td>
-					<td>{pen.model}</td>
-					<td class="mono">{pen.inventoryid}</td>
-					<td class="num">{pen.count}</td>
-				</tr>
-			{/each}
-		</tbody>
-	</table>
+		<div class="main-column">
+			<div class="controls">
+				<span class="count"
+					>{filteredPens.length} pen{filteredPens.length !== 1
+						? "s"
+						: ""}</span
+				>
+			</div>
+
+			<table class="pens-table">
+				<thead>
+					<tr>
+						<th></th>
+						<th>Brand</th>
+						<th>Model</th>
+						<th>Inventory ID</th>
+						<th class="num">Sessions</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each filteredPens as pen}
+						<tr>
+							<td class="btn-cell">
+								<a
+									href="{base}/details/{encodeURIComponent(
+										pen.brand,
+									)}/{encodeURIComponent(
+										pen.model,
+									)}/{pen.inventoryid}"
+									class="view-btn">View</a
+								>
+							</td>
+							<td>{pen.brand}</td>
+							<td>{pen.model}</td>
+							<td class="mono">{pen.inventoryid}</td>
+							<td class="num">{pen.count}</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	</div>
 </div>
 
 <style>
@@ -90,12 +103,44 @@
 		max-width: 800px;
 	}
 
-	.controls {
+	.layout-grid {
+		display: grid;
+		grid-template-columns: 300px 1fr;
+		gap: 2rem;
+		align-items: start;
+	}
+
+	@media (max-width: 900px) {
+		.layout-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	.sidebar {
 		display: flex;
 		flex-direction: column;
-		align-items: flex-start;
-		gap: 0.5rem;
-		margin-bottom: 1rem;
+		gap: 1.5rem;
+	}
+
+	.filter-box {
+		background: #fcfcfc;
+		border: 1px solid #e0e0e0;
+		border-radius: 6px;
+		padding: 1rem;
+	}
+
+	.filter-box h3 {
+		margin: 0 0 0.75rem 0;
+		font-size: 0.9rem;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		color: #555;
+	}
+
+	.controls {
+		display: flex;
+		align-items: center;
+		margin-bottom: 0.75rem;
 	}
 
 	.count {
