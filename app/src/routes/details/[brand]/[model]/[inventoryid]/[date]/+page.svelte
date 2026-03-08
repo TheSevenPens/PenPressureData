@@ -6,6 +6,14 @@
 	import BreadcrumbBar from "$lib/components/BreadcrumbBar.svelte";
 	import NavStrip from "$lib/components/NavStrip.svelte";
 	import ZoomSelect from "$lib/components/ZoomSelect.svelte";
+	import EstimatesSelect from "$lib/components/EstimatesSelect.svelte";
+	import ChartLegendTable from "$lib/components/ChartLegendTable.svelte";
+	import {
+		interpolatePhysical,
+		estimateP00,
+		estimateP100,
+		fmtP,
+	} from "$lib/interpolate.js";
 
 	let { data } = $props();
 	let session = $derived(
@@ -16,14 +24,45 @@
 
 	const COLOR = "#4a6fa5";
 
+	let hiddenLabels = $state(new Set());
+	let showEstimates = $state("estimates");
 	let zoom = $state("normal");
-	let chartRef;
+	let chartRef = $state(null);
 
 	function handleExport(action) {
-		if (action === 'copy-chart') chartRef?.copyChart();
-		else if (action === 'export-png') chartRef?.exportPng();
-		else if (action === 'copy-data') chartRef?.copyData();
-		else if (action === 'export-data') chartRef?.exportData();
+		if (action === "copy-chart") chartRef?.copyChart();
+		else if (action === "export-png") chartRef?.exportPng();
+		else if (action === "copy-data") chartRef?.copyData();
+		else if (action === "export-data") chartRef?.exportData();
+	}
+
+	function toggleSeries(label) {
+		const next = new Set(hiddenLabels);
+		if (next.has(label)) next.delete(label);
+		else next.add(label);
+		hiddenLabels = next;
+	}
+
+	function standardSampleRecords(s) {
+		return [
+			[s.p00, 0],
+			[s.p01, 1],
+			[s.p05, 5],
+			[s.p10, 10],
+			[s.p20, 20],
+			[s.p25, 25],
+			[s.p30, 30],
+			[s.p40, 40],
+			[s.p50, 50],
+			[s.p60, 60],
+			[s.p70, 70],
+			[s.p75, 75],
+			[s.p80, 80],
+			[s.p90, 90],
+			[s.p95, 95],
+			[s.p99, 99],
+			[s.p100, 100],
+		].filter(([x]) => x != null);
 	}
 
 	// --- Session navigation ---
@@ -48,9 +87,48 @@
 						label: `${session.inventoryid} ${session.date}`,
 						records: session.records,
 						color: COLOR,
+						inventoryid: session.inventoryid,
+						date: session.date,
+						p00: estimateP00(session.records),
+						p01: interpolatePhysical(session.records, 1),
+						p05: interpolatePhysical(session.records, 5),
+						p10: interpolatePhysical(session.records, 10),
+						p20: interpolatePhysical(session.records, 20),
+						p25: interpolatePhysical(session.records, 25),
+						p30: interpolatePhysical(session.records, 30),
+						p40: interpolatePhysical(session.records, 40),
+						p50: interpolatePhysical(session.records, 50),
+						p60: interpolatePhysical(session.records, 60),
+						p70: interpolatePhysical(session.records, 70),
+						p75: interpolatePhysical(session.records, 75),
+						p80: interpolatePhysical(session.records, 80),
+						p90: interpolatePhysical(session.records, 90),
+						p95: interpolatePhysical(session.records, 95),
+						p99: interpolatePhysical(session.records, 99),
+						p100: estimateP100(session.records),
 					},
 				]
 			: [],
+	);
+
+	let visibleSeries = $derived(
+		chartSeries
+			.filter((s) => !hiddenLabels.has(s.label))
+			.map((s) => {
+				if (showEstimates === "standardized") {
+					return {
+						...s,
+						records: standardSampleRecords(s),
+						p00: null,
+						p100: null,
+					};
+				}
+				return {
+					...s,
+					p00: showEstimates === "estimates" ? s.p00 : null,
+					p100: showEstimates === "estimates" ? s.p100 : null,
+				};
+			}),
 	);
 </script>
 
@@ -60,15 +138,27 @@
 			<BreadcrumbBar
 				brand={session.brand}
 				model={session.pen}
-				detail={[session.inventoryid, session.date, ...(session.notes ? [session.notes] : [])]}
+				detail={[
+					session.inventoryid,
+					session.date,
+					...(session.notes ? [session.notes] : []),
+				]}
 			/>
 			<NavStrip
 				index={sessionIndex}
 				total={allSessions.length}
-				prevHref={prevSession ? `${base}/details/${encodeURIComponent(prevSession.brand)}/${encodeURIComponent(prevSession.pen)}/${prevSession.inventoryid}/${prevSession.date}` : null}
-				prevLabel={prevSession ? `${prevSession.inventoryid} · ${prevSession.date}` : ''}
-				nextHref={nextSession ? `${base}/details/${encodeURIComponent(nextSession.brand)}/${encodeURIComponent(nextSession.pen)}/${nextSession.inventoryid}/${nextSession.date}` : null}
-				nextLabel={nextSession ? `${nextSession.inventoryid} · ${nextSession.date}` : ''}
+				prevHref={prevSession
+					? `${base}/details/${encodeURIComponent(prevSession.brand)}/${encodeURIComponent(prevSession.pen)}/${prevSession.inventoryid}/${prevSession.date}`
+					: null}
+				prevLabel={prevSession
+					? `${prevSession.inventoryid} · ${prevSession.date}`
+					: ""}
+				nextHref={nextSession
+					? `${base}/details/${encodeURIComponent(nextSession.brand)}/${encodeURIComponent(nextSession.pen)}/${nextSession.inventoryid}/${nextSession.date}`
+					: null}
+				nextLabel={nextSession
+					? `${nextSession.inventoryid} · ${nextSession.date}`
+					: ""}
 			/>
 		</div>
 
@@ -101,7 +191,14 @@
 				<div class="chart-header">
 					<h2>Pressure Response</h2>
 					<ZoomSelect bind:value={zoom} />
-					<select class="export-select" onchange={(e) => { handleExport(e.currentTarget.value); e.currentTarget.value = ''; }}>
+					<EstimatesSelect bind:value={showEstimates} />
+					<select
+						class="export-select"
+						onchange={(e) => {
+							handleExport(e.currentTarget.value);
+							e.currentTarget.value = "";
+						}}
+					>
 						<option value="">Export ▾</option>
 						<option value="copy-chart">Copy chart</option>
 						<option value="export-png">Export chart as PNG</option>
@@ -109,7 +206,24 @@
 						<option value="export-data">Export chart data</option>
 					</select>
 				</div>
-				<PressureChart bind:this={chartRef} series={chartSeries} zoomMode={zoom} title="Pressure response for {session.brand} / {session.pen} / {session.inventoryid} / {session.date}" />
+				<PressureChart
+					bind:this={chartRef}
+					series={visibleSeries}
+					zoomMode={zoom}
+					title="Pressure response for {session.brand} / {session.pen} / {session.inventoryid} / {session.date}"
+				/>
+
+				<div class="legend-container">
+					<ChartLegendTable
+						series={chartSeries}
+						{hiddenLabels}
+						{showEstimates}
+						brand={session.brand}
+						model={session.pen}
+						showInventoryId={false}
+						onToggleSeries={toggleSeries}
+					/>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -122,7 +236,7 @@
 
 <style>
 	.session-page {
-		max-width: 1200px;
+		max-width: 100%;
 	}
 
 	.page-header {
@@ -191,7 +305,6 @@
 		margin: 0;
 	}
 
-
 	.export-select {
 		font-size: 0.8rem;
 		color: #444;
@@ -204,13 +317,18 @@
 
 	.chart-section {
 		min-width: 0;
-		height: 420px;
 		display: flex;
 		flex-direction: column;
 	}
 
 	.chart-section :global(.chart-wrap) {
-		flex: 1;
+		height: 480px;
+		margin-bottom: 1.5rem;
+	}
+
+	.legend-container {
+		width: 100%;
+		overflow-x: auto;
 	}
 
 	.not-found {

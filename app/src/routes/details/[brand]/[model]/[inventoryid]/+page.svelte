@@ -6,6 +6,7 @@
 	import NavStrip from "$lib/components/NavStrip.svelte";
 	import ZoomSelect from "$lib/components/ZoomSelect.svelte";
 	import EstimatesSelect from "$lib/components/EstimatesSelect.svelte";
+	import ChartLegendTable from "$lib/components/ChartLegendTable.svelte";
 	import {
 		interpolatePhysical,
 		estimateP00,
@@ -70,9 +71,16 @@
 			p01: interpolatePhysical(s.records, 1),
 			p05: interpolatePhysical(s.records, 5),
 			p10: interpolatePhysical(s.records, 10),
+			p20: interpolatePhysical(s.records, 20),
 			p25: interpolatePhysical(s.records, 25),
+			p30: interpolatePhysical(s.records, 30),
+			p40: interpolatePhysical(s.records, 40),
 			p50: interpolatePhysical(s.records, 50),
+			p60: interpolatePhysical(s.records, 60),
+			p70: interpolatePhysical(s.records, 70),
 			p75: interpolatePhysical(s.records, 75),
+			p80: interpolatePhysical(s.records, 80),
+			p90: interpolatePhysical(s.records, 90),
 			p95: interpolatePhysical(s.records, 95),
 			p99: interpolatePhysical(s.records, 99),
 			p100: estimateP100(s.records),
@@ -80,15 +88,15 @@
 	);
 
 	let hiddenLabels = $state(new Set());
-	let showEstimates = $state('estimates');
+	let showEstimates = $state("estimates");
 	let zoom = $state("normal");
-	let chartRef;
+	let chartRef = $state(null);
 
 	function handleExport(action) {
-		if (action === 'copy-chart') chartRef?.copyChart();
-		else if (action === 'export-png') chartRef?.exportPng();
-		else if (action === 'copy-data') chartRef?.copyData();
-		else if (action === 'export-data') chartRef?.exportData();
+		if (action === "copy-chart") chartRef?.copyChart();
+		else if (action === "export-png") chartRef?.exportPng();
+		else if (action === "copy-data") chartRef?.copyData();
+		else if (action === "export-data") chartRef?.exportData();
 	}
 
 	function toggleSeries(label) {
@@ -100,8 +108,23 @@
 
 	function standardSampleRecords(s) {
 		return [
-			[s.p00, 0], [s.p01, 1], [s.p05, 5], [s.p10, 10], [s.p25, 25], [s.p50, 50],
-			[s.p75, 75], [s.p95, 95], [s.p99, 99], [s.p100, 100],
+			[s.p00, 0],
+			[s.p01, 1],
+			[s.p05, 5],
+			[s.p10, 10],
+			[s.p20, 20],
+			[s.p25, 25],
+			[s.p30, 30],
+			[s.p40, 40],
+			[s.p50, 50],
+			[s.p60, 60],
+			[s.p70, 70],
+			[s.p75, 75],
+			[s.p80, 80],
+			[s.p90, 90],
+			[s.p95, 95],
+			[s.p99, 99],
+			[s.p100, 100],
 		].filter(([x]) => x != null);
 	}
 
@@ -109,13 +132,18 @@
 		allSeries
 			.filter((s) => !hiddenLabels.has(s.label))
 			.map((s) => {
-				if (showEstimates === 'standardized') {
-					return { ...s, records: standardSampleRecords(s), p00: null, p100: null };
+				if (showEstimates === "standardized") {
+					return {
+						...s,
+						records: standardSampleRecords(s),
+						p00: null,
+						p100: null,
+					};
 				}
 				return {
 					...s,
-					p00: showEstimates === 'estimates' ? s.p00 : null,
-					p100: showEstimates === 'estimates' ? s.p100 : null,
+					p00: showEstimates === "estimates" ? s.p00 : null,
+					p100: showEstimates === "estimates" ? s.p100 : null,
 				};
 			}),
 	);
@@ -127,15 +155,22 @@
 			<BreadcrumbBar
 				brand={pen.brand}
 				model={pen.pen}
-				detail={[pen.inventoryid, `${sessions.length} ${sessions.length === 1 ? 'session' : 'sessions'}`]}
+				detail={[
+					pen.inventoryid,
+					`${sessions.length} ${sessions.length === 1 ? "session" : "sessions"}`,
+				]}
 			/>
 			<NavStrip
 				index={penIndex}
 				total={allPens.length}
-				prevHref={prevPen ? `${base}/details/${encodeURIComponent(prevPen.brand)}/${encodeURIComponent(prevPen.pen)}/${prevPen.inventoryid}` : null}
-				prevLabel={prevPen ? prevPen.inventoryid : ''}
-				nextHref={nextPen ? `${base}/details/${encodeURIComponent(nextPen.brand)}/${encodeURIComponent(nextPen.pen)}/${nextPen.inventoryid}` : null}
-				nextLabel={nextPen ? nextPen.inventoryid : ''}
+				prevHref={prevPen
+					? `${base}/details/${encodeURIComponent(prevPen.brand)}/${encodeURIComponent(prevPen.pen)}/${prevPen.inventoryid}`
+					: null}
+				prevLabel={prevPen ? prevPen.inventoryid : ""}
+				nextHref={nextPen
+					? `${base}/details/${encodeURIComponent(nextPen.brand)}/${encodeURIComponent(nextPen.pen)}/${nextPen.inventoryid}`
+					: null}
+				nextLabel={nextPen ? nextPen.inventoryid : ""}
 			/>
 		</div>
 
@@ -144,7 +179,13 @@
 				<h2>Pressure Response</h2>
 				<ZoomSelect bind:value={zoom} />
 				<EstimatesSelect bind:value={showEstimates} />
-				<select class="export-select" onchange={(e) => { handleExport(e.currentTarget.value); e.currentTarget.value = ''; }}>
+				<select
+					class="export-select"
+					onchange={(e) => {
+						handleExport(e.currentTarget.value);
+						e.currentTarget.value = "";
+					}}
+				>
 					<option value="">Export ▾</option>
 					<option value="copy-chart">Copy chart</option>
 					<option value="export-png">Export chart as PNG</option>
@@ -152,70 +193,24 @@
 					<option value="export-data">Export chart data</option>
 				</select>
 			</div>
-			<PressureChart bind:this={chartRef} series={visibleSeries} zoomMode={zoom} title="Pressure response for {pen.brand} / {pen.pen} / {pen.inventoryid}" />
+			<PressureChart
+				bind:this={chartRef}
+				series={visibleSeries}
+				zoomMode={zoom}
+				title="Pressure response for {pen.brand} / {pen.pen} / {pen.inventoryid}"
+			/>
 		</div>
 
 		{#if allSeries.length > 1}
-			<table class="legend-table">
-				<thead>
-					<tr>
-						<th class="centered">Show</th>
-						<th></th>
-						<th></th>
-						<th>Date</th>
-						{#if showEstimates !== 'raw'}<th class="right">P00</th>{/if}
-						<th class="right">P01</th>
-						<th class="right">P05</th>
-						<th class="right">P10</th>
-						<th class="right">P25</th>
-						<th class="right">P50</th>
-						<th class="right">P75</th>
-						<th class="right">P95</th>
-						<th class="right">P99</th>
-						{#if showEstimates !== 'raw'}<th class="right">P100</th>{/if}
-					</tr>
-				</thead>
-				<tbody>
-					{#each allSeries as s}
-						<tr class:dimmed={hiddenLabels.has(s.label)}>
-							<td class="centered">
-								<input
-									type="checkbox"
-									checked={!hiddenLabels.has(s.label)}
-									onchange={() => toggleSeries(s.label)}
-								/>
-							</td>
-							<td
-								><span
-									class="swatch"
-									style="background: {s.color}"
-								></span></td
-							>
-							<td class="btn-cell">
-								<a
-									href="{base}/details/{encodeURIComponent(data.brand)}/{encodeURIComponent(data.model)}/{data.inventoryid}/{s.date}"
-									class="view-btn"
-								>View</a>
-							</td>
-							<td class="mono">{s.date}</td>
-							{#if showEstimates !== 'raw'}<td class="mono right"
-									>{fmtP(s.p00)}</td
-								>{/if}
-								<td class="mono right">{fmtP(s.p01)}</td>
-							<td class="mono right">{fmtP(s.p05)}</td>
-							<td class="mono right">{fmtP(s.p10)}</td>
-							<td class="mono right">{fmtP(s.p25)}</td>
-							<td class="mono right">{fmtP(s.p50)}</td>
-							<td class="mono right">{fmtP(s.p75)}</td>
-							<td class="mono right">{fmtP(s.p95)}</td>
-							<td class="mono right">{fmtP(s.p99)}</td>
-							{#if showEstimates !== 'raw'}<td class="mono right"
-									>{fmtP(s.p100)}</td
-								>{/if}
-						</tr>
-					{/each}
-				</tbody>
-			</table>
+			<ChartLegendTable
+				series={allSeries}
+				{hiddenLabels}
+				{showEstimates}
+				brand={pen.brand}
+				model={pen.pen}
+				showInventoryId={false}
+				onToggleSeries={toggleSeries}
+			/>
 		{/if}
 	</div>
 {:else}
@@ -227,7 +222,7 @@
 
 <style>
 	.pen-page {
-		max-width: 1000px;
+		max-width: 100%;
 	}
 
 	.page-header {
@@ -267,8 +262,6 @@
 		margin: 0;
 	}
 
-
-
 	.export-select {
 		font-size: 0.8rem;
 		color: #444;
@@ -277,72 +270,6 @@
 		padding: 0.2rem 0.4rem;
 		cursor: pointer;
 		margin-left: auto;
-	}
-
-	.legend-table {
-		border-collapse: collapse;
-		font-size: 0.875rem;
-	}
-
-	.legend-table thead th {
-		background: #f0f0f0;
-		padding: 0.2rem 0.75rem;
-		text-align: left;
-		font-weight: 600;
-		border-bottom: 2px solid #ddd;
-		white-space: nowrap;
-	}
-	.legend-table thead th.centered {
-		text-align: center;
-	}
-	.legend-table thead th.right {
-		text-align: right;
-	}
-
-	.legend-table tbody td {
-		padding: 0.15rem 0.75rem;
-		border-bottom: 1px solid #eee;
-	}
-	.legend-table tbody tr.dimmed td {
-		opacity: 0.4;
-	}
-
-	.btn-cell {
-		padding: 0.15rem 0.35rem;
-	}
-
-	.view-btn {
-		display: inline-block;
-		padding: 0.1rem 0.5rem;
-		font-size: 0.72rem;
-		border: 1px solid #4a6fa5;
-		border-radius: 3px;
-		color: #4a6fa5;
-		text-decoration: none;
-		white-space: nowrap;
-	}
-
-	.view-btn:hover {
-		background: #4a6fa5;
-		color: #fff;
-	}
-
-	.swatch {
-		display: inline-block;
-		width: 14px;
-		height: 14px;
-		border-radius: 2px;
-		vertical-align: middle;
-	}
-
-	.mono {
-		font-family: monospace;
-	}
-	.centered {
-		text-align: center;
-	}
-	.right {
-		text-align: right;
 	}
 
 	.not-found {
