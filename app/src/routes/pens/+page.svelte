@@ -28,16 +28,48 @@
 	let selectedBrand = $state("");
 	let selectedModel = $state("");
 
+	let sortBy = $state("brand");
+	let sortDesc = $state(false);
+
+	function toggleSort(col) {
+		if (sortBy === col) {
+			sortDesc = !sortDesc;
+		} else {
+			sortBy = col;
+			sortDesc = col === "sessions";
+		}
+	}
+
 	function onBrandChange() {
 		selectedModel = "";
 	}
 
 	let filteredPens = $derived(
-		allPens.filter(
-			(p) =>
-				(!selectedBrand || p.brand === selectedBrand) &&
-				(!selectedModel || p.model === selectedModel),
-		),
+		allPens
+			.filter(
+				(p) =>
+					(!selectedBrand || p.brand === selectedBrand) &&
+					(!selectedModel || p.model === selectedModel),
+			)
+			.sort((a, b) => {
+				let diff = 0;
+				if (sortBy === "sessions") {
+					diff = a.count - b.count;
+				} else if (sortBy === "inventoryid") {
+					diff = a.inventoryid.localeCompare(b.inventoryid);
+				} else if (sortBy === "model") {
+					diff =
+						a.model.localeCompare(b.model) ||
+						a.brand.localeCompare(b.brand) ||
+						a.inventoryid.localeCompare(b.inventoryid);
+				} else {
+					diff =
+						a.brand.localeCompare(b.brand) ||
+						a.model.localeCompare(b.model) ||
+						a.inventoryid.localeCompare(b.inventoryid);
+				}
+				return sortDesc ? -diff : diff;
+			}),
 	);
 </script>
 
@@ -67,10 +99,38 @@
 				<thead>
 					<tr>
 						<th></th>
-						<th>Brand</th>
-						<th>Model</th>
-						<th>Inventory ID</th>
-						<th class="num">Sessions</th>
+						<th
+							class="sortable"
+							onclick={() => toggleSort("brand")}
+						>
+							Brand {#if sortBy === "brand"}{sortDesc
+									? "▼"
+									: "▲"}{/if}
+						</th>
+						<th
+							class="sortable"
+							onclick={() => toggleSort("model")}
+						>
+							Model {#if sortBy === "model"}{sortDesc
+									? "▼"
+									: "▲"}{/if}
+						</th>
+						<th
+							class="sortable"
+							onclick={() => toggleSort("inventoryid")}
+						>
+							Inventory ID {#if sortBy === "inventoryid"}{sortDesc
+									? "▼"
+									: "▲"}{/if}
+						</th>
+						<th
+							class="num sortable"
+							onclick={() => toggleSort("sessions")}
+						>
+							Sessions {#if sortBy === "sessions"}{sortDesc
+									? "▼"
+									: "▲"}{/if}
+						</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -161,6 +221,15 @@
 		font-weight: 600;
 		border-bottom: 2px solid #ddd;
 		white-space: nowrap;
+	}
+
+	.sortable {
+		cursor: pointer;
+		user-select: none;
+	}
+
+	.sortable:hover {
+		background: #e8e8e8;
 	}
 
 	.pens-table thead th.num {
