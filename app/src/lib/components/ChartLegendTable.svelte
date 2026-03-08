@@ -54,7 +54,6 @@
         <tr>
             <th class="centered">Show</th>
             <th></th>
-            <th></th>
             {#if showInventoryId}
                 <th>Inventory ID</th>
             {/if}
@@ -91,20 +90,25 @@
                 <td>
                     <span class="swatch" style="background: {s.color}"></span>
                 </td>
-                <td class="btn-cell">
+                {#if showInventoryId}
+                    <td class="mono">
+                        <a
+                            href="{base}/details/{encodeURIComponent(
+                                brand,
+                            )}/{encodeURIComponent(model)}/{s.inventoryid}"
+                            >{s.inventoryid}</a
+                        >
+                    </td>
+                {/if}
+                <td class="mono">
                     <a
                         href="{base}/details/{encodeURIComponent(
                             brand,
                         )}/{encodeURIComponent(model)}/{showInventoryId
                             ? s.inventoryid
-                            : s.label.split(' ')[0]}/{s.date}"
-                        class="view-btn">View</a
+                            : s.label.split(' ')[0]}/{s.date}">{s.date}</a
                     >
                 </td>
-                {#if showInventoryId}
-                    <td class="mono">{s.inventoryid}</td>
-                {/if}
-                <td class="mono">{s.date}</td>
                 {#if showEstimates !== "raw"}<td class="mono right"
                         >{fmtP(s.p00)}</td
                     >{/if}
@@ -159,26 +163,6 @@
     }
     .legend-table tbody tr.dimmed td {
         opacity: 0.4;
-    }
-
-    .btn-cell {
-        padding: 0.15rem 0.35rem;
-    }
-
-    .view-btn {
-        display: inline-block;
-        padding: 0.1rem 0.5rem;
-        font-size: 0.72rem;
-        border: 1px solid #4a6fa5;
-        border-radius: 3px;
-        color: #4a6fa5;
-        text-decoration: none;
-        white-space: nowrap;
-    }
-
-    .view-btn:hover {
-        background: #4a6fa5;
-        color: #fff;
     }
 
     .swatch {
