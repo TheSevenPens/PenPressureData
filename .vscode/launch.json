@@ -1,0 +1,35 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "msedge",
+            "request": "launch",
+            "name": "Launch Edge (Auto-start server)",
+            "url": "http://localhost:5999",
+            "webRoot": "${workspaceFolder}/app",
+            "preLaunchTask": "npm: dev"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome (Auto-start server)",
+            "url": "http://localhost:5999",
+            "webRoot": "${workspaceFolder}/app",
+            "preLaunchTask": "npm: dev"
+        },
+        {
+            "type": "msedge",
+            "request": "launch",
+            "name": "Launch Edge (Attach to running server)",
+            "url": "http://localhost:5999",
+            "webRoot": "${workspaceFolder}/app"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome (Attach to running server)",
+            "url": "http://localhost:5999",
+            "webRoot": "${workspaceFolder}/app"
+        }
+    ]
+}

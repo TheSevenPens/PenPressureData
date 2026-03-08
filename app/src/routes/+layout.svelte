@@ -16,7 +16,10 @@
 		// /details/ hierarchy — segment depth determines which tab is active
 		const detailsPrefix = `${base}/details/`;
 		if (path.startsWith(detailsPrefix)) {
-			const parts = path.slice(detailsPrefix.length).split("/").filter(Boolean);
+			const parts = path
+				.slice(detailsPrefix.length)
+				.split("/")
+				.filter(Boolean);
 			if (href === `${base}/models`) return parts.length === 2;
 			if (href === `${base}/pens`) return parts.length === 3;
 			if (href === `${base}/`) return parts.length === 4;
@@ -33,7 +36,7 @@
 </script>
 
 <header>
-	<h1>SevenPens Pen Pressure Data</h1>
+	<h1>SevenPens Pen Pressure Data V0.1</h1>
 </header>
 
 <nav class="tab-bar">
