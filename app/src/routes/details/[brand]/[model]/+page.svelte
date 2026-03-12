@@ -23,6 +23,12 @@
 		"#8e44ad",
 	];
 
+	function isOutlierSession(session) {
+		return session.tags?.some(
+			(tag) => String(tag).trim().toLowerCase() === "outlier",
+		);
+	}
+
 	let { data } = $props();
 
 	// --- Model navigation ---
@@ -70,6 +76,7 @@
 				label: `${s.inventoryid} ${s.date}`,
 				records: s.records,
 				color: colorMap[s.inventoryid],
+				show: !isOutlierSession(s),
 				inventoryid: s.inventoryid,
 				date: s.date,
 				...s.pValues,
@@ -78,9 +85,19 @@
 	);
 
 	let hiddenLabels = $state(new Set());
+	let defaultsApplied = $state(false);
 	let showEstimates = $state("estimates");
 	let zoom = $state("normal");
 	let chartRef = $state(null);
+
+	$effect(() => {
+		if (defaultsApplied || allSeries.length === 0) return;
+		const defaultHidden = allSeries
+			.filter((s) => s.show === false)
+			.map((s) => s.label);
+		hiddenLabels = new Set(defaultHidden);
+		defaultsApplied = true;
+	});
 
 	function handleExport(action) {
 		if (action === "copy-chart") chartRef?.copyChart();

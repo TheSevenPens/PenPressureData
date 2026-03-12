@@ -22,6 +22,12 @@
 		"#8e44ad",
 	];
 
+	function isOutlierSession(session) {
+		return session.tags?.some(
+			(tag) => String(tag).trim().toLowerCase() === "outlier",
+		);
+	}
+
 	let { data } = $props();
 
 	// --- Pen navigation ---
@@ -61,15 +67,26 @@
 			label: s.date,
 			records: s.records,
 			color: COLORS[i % COLORS.length],
+			show: !isOutlierSession(s),
 			date: s.date,
 			...s.pValues,
 		})),
 	);
 
 	let hiddenLabels = $state(new Set());
+	let defaultsApplied = $state(false);
 	let showEstimates = $state("estimates");
 	let zoom = $state("normal");
 	let chartRef = $state(null);
+
+	$effect(() => {
+		if (defaultsApplied || allSeries.length === 0) return;
+		const defaultHidden = allSeries
+			.filter((s) => s.show === false)
+			.map((s) => s.label);
+		hiddenLabels = new Set(defaultHidden);
+		defaultsApplied = true;
+	});
 
 	function handleExport(action) {
 		if (action === "copy-chart") chartRef?.copyChart();

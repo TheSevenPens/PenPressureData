@@ -120,6 +120,9 @@
 				detail={[
 					session.inventoryid,
 					session.date,
+					...(session.tags?.length
+						? [`tags: ${session.tags.join(", ")}`]
+						: []),
 					...(session.notes ? [session.notes] : []),
 				]}
 			/>
@@ -157,6 +160,10 @@
 			<div class="meta-item">
 				<span class="meta-label">Records</span>
 				<span class="meta-value">{session.records.length}</span>
+			</div>
+			<div class="meta-item">
+				<span class="meta-label">Tags</span>
+				<span class="meta-value meta-value-tags">{session.tags?.length ? session.tags.join(", ") : "None"}</span>
 			</div>
 		</div>
 
@@ -261,6 +268,11 @@
 	.meta-value {
 		font-size: 0.875rem;
 		color: #333;
+	}
+
+	.meta-value-tags {
+		max-width: 26rem;
+		word-break: break-word;
 	}
 
 	.body-layout {

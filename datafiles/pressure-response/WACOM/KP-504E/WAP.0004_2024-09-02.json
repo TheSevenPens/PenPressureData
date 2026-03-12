@@ -8,6 +8,7 @@
     "tablet": "WACOM_PTH660",
     "driver": "WACOM",
     "os": "WINDOWS",
+    "tags": "outlier,defective" , 
     "notes": "",
     "records": [
         [

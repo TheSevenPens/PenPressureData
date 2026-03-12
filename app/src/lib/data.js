@@ -8,6 +8,21 @@ const modules = import.meta.glob(
 	{ eager: true }
 );
 
+function parseTags(tags) {
+	if (Array.isArray(tags)) {
+		return tags
+			.map((tag) => String(tag).trim())
+			.filter(Boolean);
+	}
+
+	if (typeof tags !== 'string') return [];
+
+	return tags
+		.split(',')
+		.map((tag) => tag.trim())
+		.filter(Boolean);
+}
+
 function buildData() {
 	const allSessions = [];
 
@@ -36,7 +51,7 @@ function buildData() {
 			p100: estimateP100(raw.records)
 		};
 
-		allSessions.push({ ...raw, sessionId, pValues });
+		allSessions.push({ ...raw, tags: parseTags(raw.tags), sessionId, pValues });
 	}
 
 	// Sort: brand → model → inventoryid → date
