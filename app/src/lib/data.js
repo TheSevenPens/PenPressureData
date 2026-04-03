@@ -1,10 +1,8 @@
 import { estimateP00, estimateP100, interpolatePhysical } from './interpolate.js';
 
-// Load all JSON session files from the data directory.
-// Glob path is relative to this file: app/src/lib/data.js
-// Three levels up reaches the repo root, then into datafiles/
-const modules = import.meta.glob(
-	'../../../datafiles/pressure-response/**/*.json',
+// Load pressure response brand files from DrawTabData submodule
+const brandModules = import.meta.glob(
+	'../../../data-repo/data/pressure-response/*-pressure-response.json',
 	{ eager: true }
 );
 
@@ -26,32 +24,51 @@ function parseTags(tags) {
 function buildData() {
 	const allSessions = [];
 
-	for (const [path, module] of Object.entries(modules)) {
-		const filename = path.split('/').pop(); // e.g. "HUP.0001_2024-09-23.json"
-		const sessionId = filename.replace('.json', ''); // "HUP.0001_2024-09-23"
-		const raw = module.default ?? module;
+	for (const [path, module] of Object.entries(brandModules)) {
+		const data = module.default ?? module;
+		const sessions = data.PressureResponse ?? [];
 
-		const pValues = {
-			p00: estimateP00(raw.records),
-			p01: interpolatePhysical(raw.records, 1),
-			p05: interpolatePhysical(raw.records, 5),
-			p10: interpolatePhysical(raw.records, 10),
-			p20: interpolatePhysical(raw.records, 20),
-			p25: interpolatePhysical(raw.records, 25),
-			p30: interpolatePhysical(raw.records, 30),
-			p40: interpolatePhysical(raw.records, 40),
-			p50: interpolatePhysical(raw.records, 50),
-			p60: interpolatePhysical(raw.records, 60),
-			p70: interpolatePhysical(raw.records, 70),
-			p75: interpolatePhysical(raw.records, 75),
-			p80: interpolatePhysical(raw.records, 80),
-			p90: interpolatePhysical(raw.records, 90),
-			p95: interpolatePhysical(raw.records, 95),
-			p99: interpolatePhysical(raw.records, 99),
-			p100: estimateP100(raw.records)
-		};
+		for (const raw of sessions) {
+			const sessionId = `${raw.InventoryId}_${raw.Date}`;
 
-		allSessions.push({ ...raw, tags: parseTags(raw.tags), sessionId, pValues });
+			// Map DrawTabData field names to the format the app expects
+			const mapped = {
+				brand: raw.Brand,
+				pen: raw.PenEntityId ? raw.PenEntityId.split('.').pop() : '',
+				penfamily: raw.PenFamily || '',
+				inventoryid: raw.InventoryId,
+				date: raw.Date,
+				user: raw.User || '',
+				tablet: raw.TabletEntityId || '',
+				driver: raw.Driver || '',
+				os: raw.OS || '',
+				notes: raw.Notes || '',
+				tags: parseTags(raw.tags),
+				records: raw.Records || [],
+			};
+
+			const pValues = {
+				p00: estimateP00(mapped.records),
+				p01: interpolatePhysical(mapped.records, 1),
+				p05: interpolatePhysical(mapped.records, 5),
+				p10: interpolatePhysical(mapped.records, 10),
+				p20: interpolatePhysical(mapped.records, 20),
+				p25: interpolatePhysical(mapped.records, 25),
+				p30: interpolatePhysical(mapped.records, 30),
+				p40: interpolatePhysical(mapped.records, 40),
+				p50: interpolatePhysical(mapped.records, 50),
+				p60: interpolatePhysical(mapped.records, 60),
+				p70: interpolatePhysical(mapped.records, 70),
+				p75: interpolatePhysical(mapped.records, 75),
+				p80: interpolatePhysical(mapped.records, 80),
+				p90: interpolatePhysical(mapped.records, 90),
+				p95: interpolatePhysical(mapped.records, 95),
+				p99: interpolatePhysical(mapped.records, 99),
+				p100: estimateP100(mapped.records)
+			};
+
+			allSessions.push({ ...mapped, sessionId, pValues });
+		}
 	}
 
 	// Sort: brand → model → inventoryid → date
