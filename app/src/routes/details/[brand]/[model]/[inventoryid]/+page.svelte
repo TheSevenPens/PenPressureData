@@ -8,6 +8,7 @@
 	import EstimatesSelect from "$lib/components/EstimatesSelect.svelte";
 	import ChartLegendTable from "$lib/components/ChartLegendTable.svelte";
 	import { fmtP } from "$lib/interpolate.js";
+	import FlagButton from "$lib/components/FlagButton.svelte";
 
 	const COLORS = [
 		"#4a6fa5",
@@ -156,6 +157,7 @@
 					`${sessions.length} ${sessions.length === 1 ? "session" : "sessions"}`,
 				]}
 			/>
+			<FlagButton type="pen" inventoryid={pen.inventoryid} />
 			<NavStrip
 				index={penIndex}
 				total={allPens.length}

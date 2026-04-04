@@ -42,9 +42,10 @@
         series,
         hiddenLabels,
         showEstimates,
-        brand,
-        model,
+        brand = "",
+        model = "",
         showInventoryId = false,
+        showBrand = false,
         onToggleSeries,
     } = $props();
 </script>
@@ -54,7 +55,11 @@
         <tr>
             <th class="centered">Show</th>
             <th></th>
-            {#if showInventoryId}
+            {#if showBrand}
+                <th>Brand</th>
+                <th>Model</th>
+            {/if}
+            {#if showInventoryId || showBrand}
                 <th>Inventory ID</th>
             {/if}
             <th>Date</th>
@@ -90,7 +95,25 @@
                 <td>
                     <span class="swatch" style="background: {s.color}"></span>
                 </td>
-                {#if showInventoryId}
+                {#if showBrand}
+                    <td>{s.brand}</td>
+                    <td>
+                        <a
+                            href="{base}/details/{encodeURIComponent(
+                                s.brand,
+                            )}/{encodeURIComponent(s.model)}"
+                            >{s.model}</a
+                        >
+                    </td>
+                    <td class="mono">
+                        <a
+                            href="{base}/details/{encodeURIComponent(
+                                s.brand,
+                            )}/{encodeURIComponent(s.model)}/{s.inventoryid}"
+                            >{s.inventoryid}</a
+                        >
+                    </td>
+                {:else if showInventoryId}
                     <td class="mono">
                         <a
                             href="{base}/details/{encodeURIComponent(
@@ -103,8 +126,8 @@
                 <td class="mono">
                     <a
                         href="{base}/details/{encodeURIComponent(
-                            brand,
-                        )}/{encodeURIComponent(model)}/{showInventoryId
+                            showBrand ? s.brand : brand,
+                        )}/{encodeURIComponent(showBrand ? s.model : model)}/{showInventoryId || showBrand
                             ? s.inventoryid
                             : s.label.split(' ')[0]}/{s.date}">{s.date}</a
                     >

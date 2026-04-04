@@ -9,6 +9,7 @@
 	import ChartLegendTable from "$lib/components/ChartLegendTable.svelte";
 	import ModelStats from "$lib/components/ModelStats.svelte";
 	import { fmtP } from "$lib/interpolate.js";
+	import FlagButton from "$lib/components/FlagButton.svelte";
 
 	const COLORS = [
 		"#4a6fa5",
@@ -167,6 +168,7 @@
 					`${sessions.length} ${sessions.length === 1 ? "session" : "sessions"}`,
 				]}
 			/>
+			<FlagButton type="model" brand={data.brand} model={data.model} />
 			<NavStrip
 				index={modelIndex}
 				total={allModels.length}

@@ -1,13 +1,17 @@
 <script>
 	import { page } from "$app/stores";
 	import { base } from "$app/paths";
+	import { getFlaggedCount } from "$lib/flagged.svelte.js";
 
 	let { children } = $props();
+
+	let flaggedCount = $derived(getFlaggedCount());
 
 	const tabs = [
 		{ label: "Pen Models", href: `${base}/models` },
 		{ label: "Pens", href: `${base}/pens` },
 		{ label: "Sessions", href: `${base}/` },
+		{ label: "Flagged", href: `${base}/flagged` },
 	];
 
 	function isActive(href) {
@@ -41,9 +45,12 @@
 
 <nav class="tab-bar">
 	{#each tabs as tab}
-		<a href={tab.href} class="tab" class:active={isActive(tab.href)}
-			>{tab.label}</a
-		>
+		<a href={tab.href} class="tab" class:active={isActive(tab.href)}>
+			{tab.label}
+			{#if tab.label === "Flagged" && flaggedCount > 0}
+				<span class="badge">{flaggedCount}</span>
+			{/if}
+		</a>
 	{/each}
 </nav>
 
@@ -95,6 +102,18 @@
 	.tab.active {
 		color: #1a1a2e;
 		border-bottom-color: #e94560;
+	}
+
+	.badge {
+		display: inline-block;
+		background: #e94560;
+		color: #fff;
+		font-size: 0.7rem;
+		font-weight: 600;
+		padding: 0.05rem 0.4rem;
+		border-radius: 9px;
+		margin-left: 0.25rem;
+		vertical-align: top;
 	}
 
 	main {
