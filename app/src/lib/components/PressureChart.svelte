@@ -23,8 +23,8 @@
 		Filler,
 	);
 
-	/** @type {{ series: Array<{ label: string, records: Array<[number, number]>, color: string, p00?: number|null, p100?: number|null }>, zoomMode?: string, title?: string|null, envelopeMode?: boolean }} */
-	let { series, zoomMode = "normal", title = null, envelopeMode = false } = $props();
+	/** @type {{ series: Array<{ label: string, records: Array<[number, number]>, color: string, p00?: number|null, p100?: number|null, brand?: string, model?: string }>, zoomMode?: string, title?: string|null, envelopeMode?: boolean, envelopeGroups?: Array<{ key: string, label: string, color: string }> | null }} */
+	let { series, zoomMode = "normal", title = null, envelopeMode = false, envelopeGroups = null, envelopeRange = "minmax" } = $props();
 
 	let canvas;
 	let chart;
@@ -65,15 +65,31 @@
 			: (sorted[mid - 1] + sorted[mid]) / 2;
 	}
 
-	function buildEnvelopeDatasets() {
+	function hexToRgba(hex, alpha) {
+		const r = parseInt(hex.slice(1, 3), 16);
+		const g = parseInt(hex.slice(3, 5), 16);
+		const b = parseInt(hex.slice(5, 7), 16);
+		return `rgba(${r},${g},${b},${alpha})`;
+	}
+
+	function computePercentile(sorted, p) {
+		const index = (p / 100) * (sorted.length - 1);
+		const lo = Math.floor(index);
+		const hi = Math.ceil(index);
+		if (lo === hi) return sorted[lo];
+		return sorted[lo] + (sorted[hi] - sorted[lo]) * (index - lo);
+	}
+
+	function computeEnvelope(seriesSubset) {
 		const LEVELS = [0, 1, 5, 10, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90, 95, 99, 100];
 		const lower = [];
 		const upper = [];
 		const median = [];
+		const useP05P95 = envelopeRange === "p05p95";
 
 		for (const y of LEVELS) {
 			const xs = [];
-			for (const s of series) {
+			for (const s of seriesSubset) {
 				for (const [rx, ry] of s.records) {
 					if (Math.abs(ry - y) < 0.01) {
 						xs.push(rx);
@@ -81,46 +97,71 @@
 				}
 			}
 			if (xs.length === 0) continue;
-			lower.push({ x: Math.min(...xs), y });
-			upper.push({ x: Math.max(...xs), y });
+			const sorted = [...xs].sort((a, b) => a - b);
+			if (useP05P95 && sorted.length >= 3) {
+				lower.push({ x: computePercentile(sorted, 5), y });
+				upper.push({ x: computePercentile(sorted, 95), y });
+			} else {
+				lower.push({ x: sorted[0], y });
+				upper.push({ x: sorted[sorted.length - 1], y });
+			}
 			median.push({ x: computeMedian(xs), y });
 		}
 
+		// Enforce monotonically non-decreasing X for both boundaries.
+		// Missing data at certain Y levels (e.g. no P99) can cause the
+		// boundary to dip backwards; carry forward the previous max/min.
+		for (let i = 1; i < upper.length; i++) {
+			if (upper[i].x < upper[i - 1].x) {
+				upper[i] = { x: upper[i - 1].x, y: upper[i].y };
+			}
+		}
+		for (let i = 1; i < lower.length; i++) {
+			if (lower[i].x < lower[i - 1].x) {
+				lower[i] = { x: lower[i - 1].x, y: lower[i].y };
+			}
+		}
+
 		// Close the gaps at Y=0 and Y=100 so the fill covers the full area.
-		// Extend the Max curve at Y=0 back to match Min's X start point,
-		// and extend the Min curve at Y=100 out to match Max's X end point.
+		// Both arrays must stay the same length for fill: '+1' index alignment.
 		if (lower.length > 0 && upper.length > 0) {
 			const firstLower = lower[0];
 			const firstUpper = upper[0];
 			if (firstLower.y === 0 && firstUpper.y === 0 && firstLower.x < firstUpper.x) {
 				upper.unshift({ x: firstLower.x, y: 0 });
+				lower.unshift({ x: firstLower.x, y: 0 });
 			}
 			const lastLower = lower[lower.length - 1];
 			const lastUpper = upper[upper.length - 1];
 			if (lastLower.y === 100 && lastUpper.y === 100 && lastUpper.x > lastLower.x) {
 				lower.push({ x: lastUpper.x, y: 100 });
+				upper.push({ x: lastUpper.x, y: 100 });
 			}
 		}
 
+		return { lower, upper, median };
+	}
+
+	function envelopeDatasetsForColor(lower, upper, median, color, labelPrefix) {
 		return [
 			{
-				label: "Min",
+				label: `${labelPrefix} Min`,
 				data: lower,
 				showLine: true,
-				tension: 0.3,
-				borderColor: "rgba(74,111,165,0.3)",
-				backgroundColor: "rgba(74,111,165,0.12)",
+				tension: 0,
+				borderColor: hexToRgba(color, 0.3),
+				backgroundColor: hexToRgba(color, 0.12),
 				borderWidth: 1,
 				pointRadius: 0,
 				fill: "+1",
 				order: 2,
 			},
 			{
-				label: "Max",
+				label: `${labelPrefix} Max`,
 				data: upper,
 				showLine: true,
-				tension: 0.3,
-				borderColor: "rgba(74,111,165,0.3)",
+				tension: 0,
+				borderColor: hexToRgba(color, 0.3),
 				backgroundColor: "transparent",
 				borderWidth: 1,
 				pointRadius: 0,
@@ -128,12 +169,12 @@
 				order: 2,
 			},
 			{
-				label: "Median",
+				label: `${labelPrefix} Median`,
 				data: median,
 				showLine: true,
-				tension: 0.3,
-				borderColor: "#4a6fa5",
-				backgroundColor: "#4a6fa5",
+				tension: 0,
+				borderColor: color,
+				backgroundColor: color,
 				borderWidth: 2.5,
 				pointRadius: 3,
 				pointHoverRadius: 5,
@@ -141,6 +182,27 @@
 				order: 1,
 			},
 		];
+	}
+
+	function buildEnvelopeDatasets() {
+		if (envelopeGroups && envelopeGroups.length > 0) {
+			const datasets = [];
+			for (const group of envelopeGroups) {
+				const subset = series.filter(
+					(s) => `${s.brand}||${s.model}` === group.key,
+				);
+				if (subset.length === 0) continue;
+				const { lower, upper, median } = computeEnvelope(subset);
+				datasets.push(
+					...envelopeDatasetsForColor(lower, upper, median, group.color, group.label),
+				);
+			}
+			return datasets;
+		}
+
+		// Single envelope (ungrouped)
+		const { lower, upper, median } = computeEnvelope(series);
+		return envelopeDatasetsForColor(lower, upper, median, "#4a6fa5", "");
 	}
 
 	function buildChart() {
@@ -427,6 +489,8 @@
 		zoomMode;
 		title;
 		envelopeMode;
+		envelopeGroups;
+		envelopeRange;
 		if (canvas) buildChart();
 	});
 </script>

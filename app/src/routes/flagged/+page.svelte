@@ -95,6 +95,28 @@
 	let showEstimates = $state("estimates");
 	let zoom = $state("normal");
 	let chartRef = $state(null);
+	let groupByModel = $state(false);
+	let envelopeRange = $state("minmax");
+
+	// Unique models in current series for envelope grouping
+	let envelopeGroups = $derived(
+		(() => {
+			if (!groupByModel || showEstimates !== "envelope") return null;
+			const seen = new Map();
+			let colorIndex = 0;
+			for (const s of allSeries) {
+				const key = `${s.brand}||${s.model}`;
+				if (!seen.has(key)) {
+					seen.set(key, {
+						key,
+						label: `${s.brand} / ${s.model}`,
+						color: COLORS[colorIndex++ % COLORS.length],
+					});
+				}
+			}
+			return [...seen.values()];
+		})(),
+	);
 
 	$effect(() => {
 		if (defaultsApplied || allSeries.length === 0) return;
@@ -204,6 +226,16 @@
 				<h2>Pressure Response</h2>
 				<ZoomSelect bind:value={zoom} />
 				<EstimatesSelect bind:value={showEstimates} />
+				{#if showEstimates === "envelope"}
+					<select class="range-select" bind:value={envelopeRange}>
+						<option value="minmax">Range: Min/Max</option>
+						<option value="p05p95">Range: P05/P95</option>
+					</select>
+					<label class="group-toggle">
+						<input type="checkbox" bind:checked={groupByModel} />
+						Group by model
+					</label>
+				{/if}
 				<select
 					class="export-select"
 					onchange={(e) => {
@@ -223,6 +255,8 @@
 				series={visibleSeries}
 				zoomMode={zoom}
 				envelopeMode={showEstimates === "envelope"}
+				{envelopeGroups}
+				{envelopeRange}
 				title="Flagged comparison"
 			/>
 		</div>
@@ -365,6 +399,25 @@
 		letter-spacing: 0.5px;
 		color: #888;
 		margin: 0;
+	}
+
+	.range-select {
+		font-size: 0.8rem;
+		color: #444;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+		padding: 0.2rem 0.4rem;
+		cursor: pointer;
+	}
+
+	.group-toggle {
+		font-size: 0.8rem;
+		color: #444;
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+		cursor: pointer;
+		white-space: nowrap;
 	}
 
 	.export-select {

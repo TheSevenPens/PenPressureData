@@ -90,6 +90,7 @@
 	let showEstimates = $state("estimates");
 	let zoom = $state("normal");
 	let chartRef = $state(null);
+	let envelopeRange = $state("minmax");
 
 	$effect(() => {
 		if (defaultsApplied || allSeries.length === 0) return;
@@ -194,6 +195,12 @@
 				<h2>Pressure Response</h2>
 				<ZoomSelect bind:value={zoom} />
 				<EstimatesSelect bind:value={showEstimates} />
+				{#if showEstimates === "envelope"}
+					<select class="range-select" bind:value={envelopeRange}>
+						<option value="minmax">Range: Min/Max</option>
+						<option value="p05p95">Range: P05/P95</option>
+					</select>
+				{/if}
 				<select
 					class="export-select"
 					onchange={(e) => {
@@ -213,6 +220,7 @@
 				series={visibleSeries}
 				zoomMode={zoom}
 				envelopeMode={showEstimates === "envelope"}
+				{envelopeRange}
 				title="Pressure response for {data.brand} / {data.model}"
 			/>
 		</div>
@@ -274,6 +282,15 @@
 		letter-spacing: 0.5px;
 		color: #888;
 		margin: 0;
+	}
+
+	.range-select {
+		font-size: 0.8rem;
+		color: #444;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+		padding: 0.2rem 0.4rem;
+		cursor: pointer;
 	}
 
 	.export-select {
