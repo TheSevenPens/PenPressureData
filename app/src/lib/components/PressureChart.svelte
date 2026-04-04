@@ -86,6 +86,7 @@
 		const upper = [];
 		const median = [];
 		const useP05P95 = envelopeRange === "p05p95";
+		const useP25P75 = envelopeRange === "p25p75";
 
 		for (const y of LEVELS) {
 			const xs = [];
@@ -98,7 +99,10 @@
 			}
 			if (xs.length === 0) continue;
 			const sorted = [...xs].sort((a, b) => a - b);
-			if (useP05P95 && sorted.length >= 3) {
+			if (useP25P75 && sorted.length >= 3) {
+				lower.push({ x: computePercentile(sorted, 25), y });
+				upper.push({ x: computePercentile(sorted, 75), y });
+			} else if (useP05P95 && sorted.length >= 3) {
 				lower.push({ x: computePercentile(sorted, 5), y });
 				upper.push({ x: computePercentile(sorted, 95), y });
 			} else {
@@ -176,8 +180,8 @@
 				borderColor: color,
 				backgroundColor: color,
 				borderWidth: 2.5,
-				pointRadius: 3,
-				pointHoverRadius: 5,
+				pointRadius: 0,
+				pointHoverRadius: 4,
 				fill: false,
 				order: 1,
 			},
@@ -226,7 +230,7 @@
 					borderColor: s.color,
 					backgroundColor: s.color,
 					borderWidth: 2,
-					pointRadius: 2,
+					pointRadius: 0,
 					pointHoverRadius: 4,
 				});
 

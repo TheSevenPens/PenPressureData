@@ -199,6 +199,7 @@
 					<select class="range-select" bind:value={envelopeRange}>
 						<option value="minmax">Range: Min/Max</option>
 						<option value="p05p95">Range: P05/P95</option>
+						<option value="p25p75">Range: P25/P75</option>
 					</select>
 				{/if}
 				<select
