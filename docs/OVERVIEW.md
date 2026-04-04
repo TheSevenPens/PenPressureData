@@ -37,23 +37,46 @@ Sessions are identified by inventory ID (a unique physical pen unit) and date, a
 
 ## How the App Presents Data
 
-The app provides three main views for navigating the data:
+The app provides four main views for navigating the data:
 
 | View | What It Shows |
 |------|--------------|
 | **Sessions** | Every measurement session, filterable by brand and model |
 | **Models** | Pen models with counts of pens tested and sessions recorded |
 | **Pens** | Individual pen units (inventory IDs) with their session history |
+| **Flagged** | User-selected pens and models for ad-hoc comparison |
 
 Drilling into any entry leads to detail pages with interactive pressure response charts, statistical summaries, and raw data tables.
 
+### Flagging and Comparison
+
+Users can flag individual pens or entire pen models from any listing or detail page. Flagged items appear together on the Flagged tab, allowing pressure response comparison across arbitrary combinations of pens and models -- even across different brands. Flags persist in the browser via localStorage.
+
 ### Chart Features
 
-- Scatter plots of force vs. pressure with smooth curve visualization
+- Line plots of force vs. pressure
 - Zoom modes: normal range (0-1000 gf), IAF detail (0-20 gf), max pressure detail (95-100%)
 - P00/P100 extrapolation lines showing estimated activation and saturation points
 - Overlay of multiple sessions for the same pen or model
 - Export as PNG image or HTML data table
+
+### Data View Modes
+
+The estimates dropdown controls how data is presented on charts:
+
+| Mode | Description |
+|------|-------------|
+| **Raw data** | Only the measured data points |
+| **Raw + P00 & P100 estimates** | Measured data plus extrapolated activation and saturation lines |
+| **Standardized data** | Curves resampled at 17 standard percentile levels for consistent comparison |
+| **Envelope** | Replaces individual lines with a shaded min/max area and a single median line |
+
+### Envelope View
+
+The envelope view aggregates multiple sessions into a single visualization showing the range and central tendency of pressure response. Options include:
+
+- **Range selection**: Min/Max, P05/P95, or P25/P75 -- controls how wide the shaded area is
+- **Group by model**: On the Flagged page, shows a separate colored envelope per model for visual comparison
 
 ## Current Version
 

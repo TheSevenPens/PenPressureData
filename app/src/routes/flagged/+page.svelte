@@ -1,6 +1,6 @@
 <script>
 	import { base } from "$app/paths";
-	import { allSessions } from "$lib/data.js";
+	import { allSessions, familyInfoMap } from "$lib/data.js";
 	import {
 		getFlaggedPens,
 		getFlaggedModels,
@@ -85,6 +85,7 @@
 				date: s.date,
 				brand: s.brand,
 				model: s.pen,
+				penfamily: s.penfamily,
 				...s.pValues,
 			}));
 		})(),
@@ -95,26 +96,43 @@
 	let showEstimates = $state("estimates");
 	let zoom = $state("normal");
 	let chartRef = $state(null);
-	let groupByModel = $state(false);
+	let envelopeGroupBy = $state("none");
 	let envelopeRange = $state("minmax");
 
-	// Unique models in current series for envelope grouping
+	// Envelope grouping by model or family
 	let envelopeGroups = $derived(
 		(() => {
-			if (!groupByModel || showEstimates !== "envelope") return null;
+			if (showEstimates !== "envelope" || envelopeGroupBy === "none") return null;
 			const seen = new Map();
 			let colorIndex = 0;
-			for (const s of allSeries) {
-				const key = `${s.brand}||${s.model}`;
-				if (!seen.has(key)) {
-					seen.set(key, {
-						key,
-						label: `${s.brand} / ${s.model}`,
-						color: COLORS[colorIndex++ % COLORS.length],
-					});
+
+			if (envelopeGroupBy === "model") {
+				for (const s of allSeries) {
+					const key = `${s.brand}||${s.model}`;
+					if (!seen.has(key)) {
+						seen.set(key, {
+							key,
+							field: "model",
+							label: `${s.brand} / ${s.model}`,
+							color: COLORS[colorIndex++ % COLORS.length],
+						});
+					}
+				}
+			} else if (envelopeGroupBy === "family") {
+				for (const s of allSeries) {
+					if (!s.penfamily) continue;
+					if (!seen.has(s.penfamily)) {
+						const info = familyInfoMap[s.penfamily];
+						seen.set(s.penfamily, {
+							key: s.penfamily,
+							field: "penfamily",
+							label: info?.familyName || s.penfamily,
+							color: COLORS[colorIndex++ % COLORS.length],
+						});
+					}
 				}
 			}
-			return [...seen.values()];
+			return seen.size > 0 ? [...seen.values()] : null;
 		})(),
 	);
 
@@ -232,10 +250,11 @@
 						<option value="p05p95">Range: P05/P95</option>
 						<option value="p25p75">Range: P25/P75</option>
 					</select>
-					<label class="group-toggle">
-						<input type="checkbox" bind:checked={groupByModel} />
-						Group by model
-					</label>
+					<select class="group-select" bind:value={envelopeGroupBy}>
+						<option value="none">No grouping</option>
+						<option value="model">Group by model</option>
+						<option value="family">Group by family</option>
+					</select>
 				{/if}
 				<select
 					class="export-select"
@@ -411,14 +430,13 @@
 		cursor: pointer;
 	}
 
-	.group-toggle {
+	.group-select {
 		font-size: 0.8rem;
 		color: #444;
-		display: flex;
-		align-items: center;
-		gap: 0.3rem;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+		padding: 0.2rem 0.4rem;
 		cursor: pointer;
-		white-space: nowrap;
 	}
 
 	.export-select {

@@ -4,6 +4,7 @@
 	import BrandFilter from "$lib/components/BrandFilter.svelte";
 	import ModelFilter from "$lib/components/ModelFilter.svelte";
 	import FlagButton from "$lib/components/FlagButton.svelte";
+	import { penFamilies } from "$lib/data.js";
 
 	const allPens = (() => {
 		const map = {};
@@ -12,6 +13,7 @@
 				map[s.inventoryid] = {
 					brand: s.brand,
 					model: s.pen,
+					penfamily: s.penfamily,
 					inventoryid: s.inventoryid,
 					count: 0,
 				};
@@ -28,6 +30,7 @@
 
 	let selectedBrand = $state("");
 	let selectedModel = $state("");
+	let selectedFamily = $state("");
 
 	let sortBy = $state("brand");
 	let sortDesc = $state(false);
@@ -43,14 +46,20 @@
 
 	function onBrandChange() {
 		selectedModel = "";
+		selectedFamily = "";
 	}
+
+	let availableFamilies = $derived(
+		penFamilies.filter((f) => !selectedBrand || f.brand === selectedBrand),
+	);
 
 	let filteredPens = $derived(
 		allPens
 			.filter(
 				(p) =>
 					(!selectedBrand || p.brand === selectedBrand) &&
-					(!selectedModel || p.model === selectedModel),
+					(!selectedModel || p.model === selectedModel) &&
+					(!selectedFamily || p.penfamily === selectedFamily),
 			)
 			.sort((a, b) => {
 				let diff = 0;
@@ -81,6 +90,17 @@
 				<h3>Brand</h3>
 				<BrandFilter bind:selectedBrand onchange={onBrandChange} />
 			</div>
+			{#if availableFamilies.length > 0}
+				<div class="filter-box">
+					<h3>Pen Family</h3>
+					<select class="family-select" bind:value={selectedFamily}>
+						<option value="">All</option>
+						{#each availableFamilies as f}
+							<option value={f.familyId}>{f.familyName}</option>
+						{/each}
+					</select>
+				</div>
+			{/if}
 			<div class="filter-box">
 				<h3>Model</h3>
 				<ModelFilter bind:selectedModel {selectedBrand} />
@@ -254,6 +274,15 @@
 
 	.mono {
 		font-family: monospace;
+	}
+
+	.family-select {
+		width: 100%;
+		font-size: 0.85rem;
+		padding: 0.3rem 0.4rem;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+		cursor: pointer;
 	}
 
 	.flag-col {

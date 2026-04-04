@@ -4,10 +4,10 @@ Known issues, planned work, and ideas for future development.
 
 ## Open Issues (from GitHub)
 
-### #7 - Add Comparison: Pens and Groups of Pens
+### #7 - Add Comparison: Pens and Groups of Pens (Implemented)
 **Label:** enhancement
 
-Add the ability to compare pressure response curves across different pen models side-by-side. Currently the app shows all sessions for a single model or inventory ID overlaid on one chart, but there is no way to select arbitrary pens or groups and compare them on one view. This is tracked on the `WIP-Comparison` branch.
+~~Add the ability to compare pressure response curves across different pen models side-by-side.~~ Implemented via the Flagged feature: users can flag arbitrary pens and models, then view them together on the Flagged tab with pressure charts, envelope views, and group-by-model comparison.
 
 ### #6 - Flag Pens Without a Measurement Update in Over a Year
 Identify pen models or inventory IDs whose most recent measurement session is more than a year old. These are candidates for re-measurement to confirm that their pressure response hasn't drifted or to capture data with updated drivers/tablets.
@@ -35,10 +35,10 @@ The Initial Activation Force (P00) values are estimates derived from extrapolati
 
 ## Comparison and Analysis Features
 
-- **Cross-model comparison** -- Select 2+ pen models and overlay their curves on a single chart (issue #7, in progress on `WIP-Comparison` branch).
-- **Cross-brand comparison** -- Compare typical pressure curves across brands to show brand-level tendencies.
+- **Cross-model comparison** -- Implemented via the Flagged feature with flag buttons, a dedicated Flagged tab, and envelope view with group-by-model.
+- **Cross-brand comparison** -- Compare typical pressure curves across brands to show brand-level tendencies. The envelope view with group-by-model on the Flagged page supports this.
 - **Pressure curve clustering** -- Group pens with similar response characteristics regardless of brand, helping users find pens that "feel" similar.
-- **Statistical confidence bands** -- For models with multiple sessions, show confidence intervals rather than just individual curves.
+- **Additional envelope grouping** -- Currently envelopes can be grouped by model. Future options could include grouping by brand, by pen family, or by tablet.
 
 ## User Experience
 
@@ -56,6 +56,7 @@ The Initial Activation Force (P00) values are estimates derived from extrapolati
 
 ## Technical Improvements
 
+- **Migrate interpolation to DrawTabData** -- The P-value interpolation and estimation logic (`interpolate.js`) is useful for all consumers of the DrawTabData dataset, not just this app. It should move into the DrawTabData submodule's shared libraries so other tools can reuse it. This app would then import the functions from `data-repo/lib/` instead of bundling its own copy.
 - **TypeScript migration** -- The app uses plain JavaScript. TypeScript would add type safety, especially for the data processing pipeline where field mapping between DrawTabData and app formats is error-prone.
 - **Testing** -- No test suite currently exists. Unit tests for `interpolate.js` (P00/P100 estimation) and `data.js` (field mapping, hierarchy building) would catch regressions in the core data pipeline.
 - **Chart library evaluation** -- Chart.js works well but alternatives (Observable Plot, D3, uPlot) could offer better performance with large overlaid datasets or more flexible interaction patterns.

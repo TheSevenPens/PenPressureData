@@ -52,16 +52,35 @@ The data lives in a separate repository ([DrawTabData](https://github.com/TheSev
 
 Each `Records` entry is a pair: `[physical_force_gf, logical_pressure_pct]`.
 
-### 2. Data Processing (`app/src/lib/`)
+### 2. Data Ingestion (`app/src/lib/data.js`)
 
-Two core modules handle data loading and computation:
-
-#### `data.js` - Loading and Indexing
+Responsible for loading raw data from the DrawTabData submodule and converting it into the app's internal format:
 
 1. **Vite glob import** loads all `*-pressure-response.json` files at build time
-2. **Field mapping** converts DrawTabData field names to app-internal names
-3. **P-value calculation** computes 17 percentile marks (P00, P01, P05, P10...P95, P99, P100) for each session using interpolation
-4. **Hierarchical indexing** organizes sessions into a nested structure:
+2. **Field mapping** converts DrawTabData field names (e.g. `PenEntityId`, `InventoryId`, `TabletEntityId`) to app-internal names (e.g. `pen`, `inventoryid`, `tablet`)
+3. **Tag parsing** normalizes the `tags` field from CSV strings or arrays into a consistent array format
+
+The ingestion layer isolates the rest of the app from changes in the DrawTabData schema -- if field names change upstream, only the mapping in `data.js` needs updating.
+
+### 3. Data Analysis (`app/src/lib/`)
+
+Operates on the ingested session data to compute derived values and organize sessions for the UI:
+
+#### P-value Computation (`data.js` + `interpolate.js`)
+
+- **P-value calculation** computes 17 percentile marks (P00, P01, P05, P10...P95, P99, P100) for each session
+- **P00 estimation** (`estimateP00`) uses a spring-decay model that extrapolates backward from the first measured point to estimate Initial Activation Force
+- **P100 estimation** (`estimateP100`) uses the same spring-decay model extrapolating forward to estimate the force needed for 100% pressure
+- **Interior interpolation** fills any null P-values between non-null neighbors (e.g. if raw data doesn't reach 99% logical pressure, P99 is interpolated between P95 and P100)
+- **`interpolatePhysical(records, targetLogical)`** performs linear interpolation between adjacent data points to find the physical force for a given logical pressure percentage
+
+These estimates allow meaningful P00/P100 values even when the raw data doesn't include measurements at exactly 0% or 100%.
+
+> **Note:** The interpolation and P-value estimation logic currently lives in this app (`interpolate.js`), but is expected to migrate into the DrawTabData submodule's shared libraries in the future, since it is useful for all consumers of that dataset.
+
+#### Hierarchical Indexing (`data.js`)
+
+Sessions are organized into a nested structure for navigation:
 
 ```
 byBrand
@@ -73,23 +92,16 @@ byBrand
                            └── allSessions[]
 ```
 
-5. **Exports** reactive lists: `allBrands`, `allModels`, `allInventoryIds`, `allSessions`
+Exports: `allSessions`, `byBrand`, `sessionById`, `brands`
 
-#### `interpolate.js` - Pressure Estimation
-
-- **`interpolatePhysical(records, targetLogical)`** - Linear interpolation to find the physical force for a given logical pressure percentage
-- **`estimateP00(records)`** - Estimates Initial Activation Force using a spring-decay model that extrapolates backward from the first measured point
-- **`estimateP100(records)`** - Estimates maximum force using the same spring-decay model extrapolating forward to 100%
-
-These estimates allow meaningful P00/P100 values even when the raw data doesn't include measurements at exactly 0% or 100%.
-
-### 3. UI Components (`app/src/lib/components/`)
+### 4. UI Components (`app/src/lib/components/`)
 
 The app uses Svelte 5 with runes (`$state`, `$derived`, `$props`, `$bindable`) for reactivity.
 
 | Component | Role |
 |-----------|------|
-| **PressureChart** | Chart.js scatter plot with zoom modes, extrapolation lines, and 4 export methods (PNG copy/download, HTML table copy/download) |
+| **PressureChart** | Chart.js scatter plot with zoom modes, extrapolation lines, envelope mode (min/max area + median), and 4 export methods (PNG copy/download, HTML table copy/download) |
+| **FlagButton** | Toggle button for flagging pens or models for comparison |
 | **ChartLegendTable** | Interactive legend with checkboxes to toggle session visibility; displays P-value statistics |
 | **ModelStats** | Aggregated statistics table showing min/median/max across sessions for key P-values |
 | **BrandFilter** | Pill-button bar for selecting brands |
@@ -98,10 +110,10 @@ The app uses Svelte 5 with runes (`$state`, `$derived`, `$props`, `$bindable`) f
 | **BreadcrumbBar** | Hierarchical breadcrumb navigation with item counts |
 | **NavStrip** | Previous/next navigation between models |
 | **ZoomSelect** | Chart zoom mode selector: normal / IAF detail / max pressure detail |
-| **EstimatesSelect** | Data mode selector: raw / estimates (P00/P100) / standardized |
+| **EstimatesSelect** | Data mode selector: raw / estimates (P00/P100) / standardized / envelope |
 | **RecordsTable** | Raw measurement data table |
 
-### 4. Routing (`app/src/routes/`)
+### 5. Routing (`app/src/routes/`)
 
 SvelteKit file-based routing provides the page hierarchy:
 
@@ -109,14 +121,26 @@ SvelteKit file-based routing provides the page hierarchy:
 /                              Sessions listing (all sessions, filterable)
 /models                        Pen models overview
 /pens                          Individual pen units overview
+/flagged                       Flagged pens/models comparison view
 /details/[brand]/[model]       All sessions for a pen model (chart + stats)
 /details/[brand]/[model]/[inventoryid]          Sessions for a specific pen unit
 /details/[brand]/[model]/[inventoryid]/[date]   Single measurement session
 ```
 
-The layout component (`+layout.svelte`) provides consistent header navigation and detects route depth for active tab highlighting.
+The layout component (`+layout.svelte`) provides consistent header navigation with a badge count on the Flagged tab and detects route depth for active tab highlighting.
 
-### 5. Build and Deployment
+### 6. Flagging System (`app/src/lib/flagged.svelte.js`)
+
+A reactive store using Svelte 5 runes that manages two sets of flagged items:
+
+- **Flagged pens** -- individual inventory IDs (e.g. `"WAP.0004"`)
+- **Flagged models** -- brand+model compound keys (e.g. `"WACOM||KP504E"`)
+
+Flagging a model includes all current and future sessions for that brand+model. Flagging a pen includes all sessions for that specific inventory ID. Both sets are persisted to localStorage.
+
+Flag buttons appear on the Models and Pens listing pages (as a column in each table row) and on model/pen detail page headers.
+
+### 7. Build and Deployment
 
 **Build chain:**
 ```
