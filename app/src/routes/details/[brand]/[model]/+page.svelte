@@ -9,6 +9,7 @@
 	import ChartLegendTable from "$lib/components/ChartLegendTable.svelte";
 	import ModelStats from "$lib/components/ModelStats.svelte";
 	import { fmtP } from "$lib/interpolate.js";
+	import FlagButton from "$lib/components/FlagButton.svelte";
 
 	const COLORS = [
 		"#4a6fa5",
@@ -89,6 +90,7 @@
 	let showEstimates = $state("estimates");
 	let zoom = $state("normal");
 	let chartRef = $state(null);
+	let envelopeRange = $state("minmax");
 
 	$effect(() => {
 		if (defaultsApplied || allSeries.length === 0) return;
@@ -139,7 +141,7 @@
 		allSeries
 			.filter((s) => !hiddenLabels.has(s.label))
 			.map((s) => {
-				if (showEstimates === "standardized") {
+				if (showEstimates === "standardized" || showEstimates === "envelope") {
 					return {
 						...s,
 						records: standardSampleRecords(s),
@@ -167,6 +169,7 @@
 					`${sessions.length} ${sessions.length === 1 ? "session" : "sessions"}`,
 				]}
 			/>
+			<FlagButton type="model" brand={data.brand} model={data.model} />
 			<NavStrip
 				index={modelIndex}
 				total={allModels.length}
@@ -192,6 +195,13 @@
 				<h2>Pressure Response</h2>
 				<ZoomSelect bind:value={zoom} />
 				<EstimatesSelect bind:value={showEstimates} />
+				{#if showEstimates === "envelope"}
+					<select class="range-select" bind:value={envelopeRange}>
+						<option value="minmax">Range: Min/Max</option>
+						<option value="p05p95">Range: P05/P95</option>
+						<option value="p25p75">Range: P25/P75</option>
+					</select>
+				{/if}
 				<select
 					class="export-select"
 					onchange={(e) => {
@@ -210,6 +220,8 @@
 				bind:this={chartRef}
 				series={visibleSeries}
 				zoomMode={zoom}
+				envelopeMode={showEstimates === "envelope"}
+				{envelopeRange}
 				title="Pressure response for {data.brand} / {data.model}"
 			/>
 		</div>
@@ -271,6 +283,15 @@
 		letter-spacing: 0.5px;
 		color: #888;
 		margin: 0;
+	}
+
+	.range-select {
+		font-size: 0.8rem;
+		color: #444;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+		padding: 0.2rem 0.4rem;
+		cursor: pointer;
 	}
 
 	.export-select {

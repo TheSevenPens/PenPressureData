@@ -8,6 +8,7 @@
 	import EstimatesSelect from "$lib/components/EstimatesSelect.svelte";
 	import ChartLegendTable from "$lib/components/ChartLegendTable.svelte";
 	import { fmtP } from "$lib/interpolate.js";
+	import FlagButton from "$lib/components/FlagButton.svelte";
 
 	const COLORS = [
 		"#4a6fa5",
@@ -128,7 +129,7 @@
 		allSeries
 			.filter((s) => !hiddenLabels.has(s.label))
 			.map((s) => {
-				if (showEstimates === "standardized") {
+				if (showEstimates === "standardized" || showEstimates === "envelope") {
 					return {
 						...s,
 						records: standardSampleRecords(s),
@@ -156,6 +157,7 @@
 					`${sessions.length} ${sessions.length === 1 ? "session" : "sessions"}`,
 				]}
 			/>
+			<FlagButton type="pen" inventoryid={pen.inventoryid} />
 			<NavStrip
 				index={penIndex}
 				total={allPens.length}
@@ -193,6 +195,7 @@
 				bind:this={chartRef}
 				series={visibleSeries}
 				zoomMode={zoom}
+				envelopeMode={showEstimates === "envelope"}
 				title="Pressure response for {pen.brand} / {pen.pen} / {pen.inventoryid}"
 			/>
 		</div>

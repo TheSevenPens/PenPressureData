@@ -67,6 +67,24 @@ function buildData() {
 				p100: estimateP100(mapped.records)
 			};
 
+			// Fill interior nulls by interpolating between neighboring non-null P-values.
+			const pKeys = ['p00','p01','p05','p10','p20','p25','p30','p40','p50','p60','p70','p75','p80','p90','p95','p99','p100'];
+			const pLevels = [0, 1, 5, 10, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90, 95, 99, 100];
+			for (let i = 1; i < pKeys.length - 1; i++) {
+				if (pValues[pKeys[i]] != null) continue;
+				// Find previous non-null
+				let lo = i - 1;
+				while (lo >= 0 && pValues[pKeys[lo]] == null) lo--;
+				// Find next non-null
+				let hi = i + 1;
+				while (hi < pKeys.length && pValues[pKeys[hi]] == null) hi++;
+				if (lo < 0 || hi >= pKeys.length) continue;
+				const loVal = pValues[pKeys[lo]];
+				const hiVal = pValues[pKeys[hi]];
+				const t = (pLevels[i] - pLevels[lo]) / (pLevels[hi] - pLevels[lo]);
+				pValues[pKeys[i]] = loVal + t * (hiVal - loVal);
+			}
+
 			allSessions.push({ ...mapped, sessionId, pValues });
 		}
 	}

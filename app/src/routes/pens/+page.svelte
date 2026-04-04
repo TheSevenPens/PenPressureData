@@ -3,6 +3,7 @@
 	import { allSessions } from "$lib/data.js";
 	import BrandFilter from "$lib/components/BrandFilter.svelte";
 	import ModelFilter from "$lib/components/ModelFilter.svelte";
+	import FlagButton from "$lib/components/FlagButton.svelte";
 
 	const allPens = (() => {
 		const map = {};
@@ -130,6 +131,7 @@
 									? "▼"
 									: "▲"}{/if}
 						</th>
+						<th class="flag-col"></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -154,6 +156,7 @@
 								>
 							</td>
 							<td class="num">{pen.count}</td>
+							<td class="flag-col"><FlagButton type="pen" inventoryid={pen.inventoryid} /></td>
 						</tr>
 					{/each}
 				</tbody>
@@ -251,5 +254,11 @@
 
 	.mono {
 		font-family: monospace;
+	}
+
+	.flag-col {
+		width: 2rem;
+		text-align: center;
+		padding: 0.25rem 0.5rem;
 	}
 </style>

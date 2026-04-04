@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "pen-pressure-viewer",
-      "runtimeExecutable": "C:/Users/seven/miniconda3/envs/node1/node.exe",
+      "runtimeExecutable": "C:/Users/seven/micromamba/envs/node1/node.exe",
       "runtimeArgs": ["start-dev.mjs"],
       "port": 5999
     }
