@@ -6,6 +6,18 @@ const brandModules = import.meta.glob(
 	{ eager: true }
 );
 
+// Load pen definition files to look up PenFamily by PenEntityId
+const penModules = import.meta.glob(
+	'../../../data-repo/data/pens/*-pens.json',
+	{ eager: true }
+);
+
+// Load pen family definition files
+const penFamilyModules = import.meta.glob(
+	'../../../data-repo/data/pen-families/*-pen-families.json',
+	{ eager: true }
+);
+
 function parseTags(tags) {
 	if (Array.isArray(tags)) {
 		return tags
@@ -21,6 +33,37 @@ function parseTags(tags) {
 		.filter(Boolean);
 }
 
+// Build pen entity → family lookup from pen definition files
+function buildPenFamilyLookups() {
+	const penEntityToFamily = {};
+	for (const [, module] of Object.entries(penModules)) {
+		const data = module.default ?? module;
+		const pens = data.Pens ?? [];
+		for (const pen of pens) {
+			if (pen.EntityId && pen.PenFamily) {
+				penEntityToFamily[pen.EntityId] = pen.PenFamily;
+			}
+		}
+	}
+
+	const familyInfoMap = {};
+	for (const [, module] of Object.entries(penFamilyModules)) {
+		const data = module.default ?? module;
+		const families = data.PenFamilies ?? [];
+		for (const fam of families) {
+			familyInfoMap[fam.FamilyId] = {
+				familyId: fam.FamilyId,
+				familyName: fam.FamilyName,
+				brand: fam.Brand,
+			};
+		}
+	}
+
+	return { penEntityToFamily, familyInfoMap };
+}
+
+const { penEntityToFamily, familyInfoMap } = buildPenFamilyLookups();
+
 function buildData() {
 	const allSessions = [];
 
@@ -31,11 +74,15 @@ function buildData() {
 		for (const raw of sessions) {
 			const sessionId = `${raw.InventoryId}_${raw.Date}`;
 
+			// Look up pen family from pen definitions
+			const familyId = (raw.PenEntityId && penEntityToFamily[raw.PenEntityId]) || '';
+
 			// Map DrawTabData field names to the format the app expects
 			const mapped = {
 				brand: raw.Brand,
 				pen: raw.PenEntityId ? raw.PenEntityId.split('.').pop() : '',
-				penfamily: raw.PenFamily || '',
+				penEntityId: raw.PenEntityId || '',
+				penfamily: familyId,
 				inventoryid: raw.InventoryId,
 				date: raw.Date,
 				user: raw.User || '',
@@ -126,3 +173,15 @@ function buildData() {
 
 export const { allSessions, byBrand, sessionById } = buildData();
 export const brands = Object.keys(byBrand).sort();
+export { familyInfoMap };
+
+// Build list of pen families that have pressure response data
+export const penFamilies = (() => {
+	const familiesWithData = new Set();
+	for (const s of allSessions) {
+		if (s.penfamily) familiesWithData.add(s.penfamily);
+	}
+	return [...familiesWithData]
+		.map((id) => familyInfoMap[id] || { familyId: id, familyName: id, brand: '' })
+		.sort((a, b) => a.brand.localeCompare(b.brand) || a.familyName.localeCompare(b.familyName));
+})();

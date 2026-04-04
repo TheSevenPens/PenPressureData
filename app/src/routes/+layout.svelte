@@ -9,6 +9,7 @@
 
 	const tabs = [
 		{ label: "Pen Models", href: `${base}/models` },
+		{ label: "Pen Families", href: `${base}/families` },
 		{ label: "Pens", href: `${base}/pens` },
 		{ label: "Sessions", href: `${base}/` },
 		{ label: "Flagged", href: `${base}/flagged` },

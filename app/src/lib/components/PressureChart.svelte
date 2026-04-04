@@ -192,9 +192,10 @@
 		if (envelopeGroups && envelopeGroups.length > 0) {
 			const datasets = [];
 			for (const group of envelopeGroups) {
-				const subset = series.filter(
-					(s) => `${s.brand}||${s.model}` === group.key,
-				);
+				const subset = series.filter((s) => {
+					if (group.field === "penfamily") return s.penfamily === group.key;
+					return `${s.brand}||${s.model}` === group.key;
+				});
 				if (subset.length === 0) continue;
 				const { lower, upper, median } = computeEnvelope(subset);
 				datasets.push(
