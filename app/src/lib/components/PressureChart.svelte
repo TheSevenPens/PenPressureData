@@ -9,6 +9,7 @@
 		Tooltip,
 		Legend,
 		Title,
+		Filler,
 	} from "chart.js";
 
 	Chart.register(
@@ -19,10 +20,11 @@
 		Tooltip,
 		Legend,
 		Title,
+		Filler,
 	);
 
-	/** @type {{ series: Array<{ label: string, records: Array<[number, number]>, color: string, p00?: number|null, p100?: number|null }>, zoomMode?: string, title?: string|null }} */
-	let { series, zoomMode = "normal", title = null } = $props();
+	/** @type {{ series: Array<{ label: string, records: Array<[number, number]>, color: string, p00?: number|null, p100?: number|null }>, zoomMode?: string, title?: string|null, envelopeMode?: boolean }} */
+	let { series, zoomMode = "normal", title = null, envelopeMode = false } = $props();
 
 	let canvas;
 	let chart;
@@ -55,6 +57,92 @@
 		return { xMin: 0, xMax: 1000, yMin: 0, yMax: 100 };
 	}
 
+	function computeMedian(values) {
+		const sorted = [...values].sort((a, b) => a - b);
+		const mid = Math.floor(sorted.length / 2);
+		return sorted.length % 2 !== 0
+			? sorted[mid]
+			: (sorted[mid - 1] + sorted[mid]) / 2;
+	}
+
+	function buildEnvelopeDatasets() {
+		const LEVELS = [0, 1, 5, 10, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90, 95, 99, 100];
+		const lower = [];
+		const upper = [];
+		const median = [];
+
+		for (const y of LEVELS) {
+			const xs = [];
+			for (const s of series) {
+				for (const [rx, ry] of s.records) {
+					if (Math.abs(ry - y) < 0.01) {
+						xs.push(rx);
+					}
+				}
+			}
+			if (xs.length === 0) continue;
+			lower.push({ x: Math.min(...xs), y });
+			upper.push({ x: Math.max(...xs), y });
+			median.push({ x: computeMedian(xs), y });
+		}
+
+		// Close the gaps at Y=0 and Y=100 so the fill covers the full area.
+		// Extend the Max curve at Y=0 back to match Min's X start point,
+		// and extend the Min curve at Y=100 out to match Max's X end point.
+		if (lower.length > 0 && upper.length > 0) {
+			const firstLower = lower[0];
+			const firstUpper = upper[0];
+			if (firstLower.y === 0 && firstUpper.y === 0 && firstLower.x < firstUpper.x) {
+				upper.unshift({ x: firstLower.x, y: 0 });
+			}
+			const lastLower = lower[lower.length - 1];
+			const lastUpper = upper[upper.length - 1];
+			if (lastLower.y === 100 && lastUpper.y === 100 && lastUpper.x > lastLower.x) {
+				lower.push({ x: lastUpper.x, y: 100 });
+			}
+		}
+
+		return [
+			{
+				label: "Min",
+				data: lower,
+				showLine: true,
+				tension: 0.3,
+				borderColor: "rgba(74,111,165,0.3)",
+				backgroundColor: "rgba(74,111,165,0.12)",
+				borderWidth: 1,
+				pointRadius: 0,
+				fill: "+1",
+				order: 2,
+			},
+			{
+				label: "Max",
+				data: upper,
+				showLine: true,
+				tension: 0.3,
+				borderColor: "rgba(74,111,165,0.3)",
+				backgroundColor: "transparent",
+				borderWidth: 1,
+				pointRadius: 0,
+				fill: false,
+				order: 2,
+			},
+			{
+				label: "Median",
+				data: median,
+				showLine: true,
+				tension: 0.3,
+				borderColor: "#4a6fa5",
+				backgroundColor: "#4a6fa5",
+				borderWidth: 2.5,
+				pointRadius: 3,
+				pointHoverRadius: 5,
+				fill: false,
+				order: 1,
+			},
+		];
+	}
+
 	function buildChart() {
 		if (chart) chart.destroy();
 
@@ -63,64 +151,68 @@
 
 		const datasets = [];
 
-		for (const s of series) {
-			// Main measured data line
-			datasets.push({
-				label: s.label,
-				data: s.records.map(([x, y]) => ({ x, y })),
-				showLine: true,
-				tension: 0,
-				borderColor: s.color,
-				backgroundColor: s.color,
-				borderWidth: 2,
-				pointRadius: 2,
-				pointHoverRadius: 4,
-			});
-
-			// Dotted extrapolation line from P00 (y=0) to first measured point
-			if (s.p00 != null && s.records.length > 0) {
-				const [firstX, firstY] = s.records[0];
+		if (envelopeMode && series.length > 0) {
+			datasets.push(...buildEnvelopeDatasets());
+		} else {
+			for (const s of series) {
+				// Main measured data line
 				datasets.push({
-					label: `${s.label}_p00_extrap`,
-					data: [
-						{ x: s.p00, y: 0 },
-						{ x: firstX, y: firstY },
-					],
+					label: s.label,
+					data: s.records.map(([x, y]) => ({ x, y })),
 					showLine: true,
 					tension: 0,
 					borderColor: s.color,
-					backgroundColor: "transparent",
-					borderWidth: 1.5,
-					borderDash: [2, 4],
-					pointRadius: [4, 0],
-					pointHoverRadius: [5, 0],
-					pointStyle: ["crossRot", ""],
-					pointBorderColor: s.color,
-					pointBackgroundColor: "white",
+					backgroundColor: s.color,
+					borderWidth: 2,
+					pointRadius: 2,
+					pointHoverRadius: 4,
 				});
-			}
 
-			// Dotted extrapolation line from last measured point to P100 (y=100)
-			if (s.p100 != null && s.records.length > 0) {
-				const [lastX, lastY] = s.records[s.records.length - 1];
-				datasets.push({
-					label: `${s.label}_p100_extrap`,
-					data: [
-						{ x: lastX, y: lastY },
-						{ x: s.p100, y: 100 },
-					],
-					showLine: true,
-					tension: 0,
-					borderColor: s.color,
-					backgroundColor: "transparent",
-					borderWidth: 1.5,
-					borderDash: [2, 4],
-					pointRadius: [0, 4],
-					pointHoverRadius: [0, 5],
-					pointStyle: ["", "crossRot"],
-					pointBorderColor: s.color,
-					pointBackgroundColor: "white",
-				});
+				// Dotted extrapolation line from P00 (y=0) to first measured point
+				if (s.p00 != null && s.records.length > 0) {
+					const [firstX, firstY] = s.records[0];
+					datasets.push({
+						label: `${s.label}_p00_extrap`,
+						data: [
+							{ x: s.p00, y: 0 },
+							{ x: firstX, y: firstY },
+						],
+						showLine: true,
+						tension: 0,
+						borderColor: s.color,
+						backgroundColor: "transparent",
+						borderWidth: 1.5,
+						borderDash: [2, 4],
+						pointRadius: [4, 0],
+						pointHoverRadius: [5, 0],
+						pointStyle: ["crossRot", ""],
+						pointBorderColor: s.color,
+						pointBackgroundColor: "white",
+					});
+				}
+
+				// Dotted extrapolation line from last measured point to P100 (y=100)
+				if (s.p100 != null && s.records.length > 0) {
+					const [lastX, lastY] = s.records[s.records.length - 1];
+					datasets.push({
+						label: `${s.label}_p100_extrap`,
+						data: [
+							{ x: lastX, y: lastY },
+							{ x: s.p100, y: 100 },
+						],
+						showLine: true,
+						tension: 0,
+						borderColor: s.color,
+						backgroundColor: "transparent",
+						borderWidth: 1.5,
+						borderDash: [2, 4],
+						pointRadius: [0, 4],
+						pointHoverRadius: [0, 5],
+						pointStyle: ["", "crossRot"],
+						pointBorderColor: s.color,
+						pointBackgroundColor: "white",
+					});
+				}
 			}
 		}
 
@@ -334,6 +426,7 @@
 		series;
 		zoomMode;
 		title;
+		envelopeMode;
 		if (canvas) buildChart();
 	});
 </script>

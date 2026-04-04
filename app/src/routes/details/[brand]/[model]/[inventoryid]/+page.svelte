@@ -129,7 +129,7 @@
 		allSeries
 			.filter((s) => !hiddenLabels.has(s.label))
 			.map((s) => {
-				if (showEstimates === "standardized") {
+				if (showEstimates === "standardized" || showEstimates === "envelope") {
 					return {
 						...s,
 						records: standardSampleRecords(s),
@@ -195,6 +195,7 @@
 				bind:this={chartRef}
 				series={visibleSeries}
 				zoomMode={zoom}
+				envelopeMode={showEstimates === "envelope"}
 				title="Pressure response for {pen.brand} / {pen.pen} / {pen.inventoryid}"
 			/>
 		</div>

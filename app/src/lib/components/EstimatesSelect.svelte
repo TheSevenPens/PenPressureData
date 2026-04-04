@@ -6,6 +6,7 @@
 	<option value="raw">Raw data</option>
 	<option value="estimates">Raw + P00 & P100 estimates</option>
 	<option value="standardized">Standardized data</option>
+	<option value="envelope">Envelope (min/max/median)</option>
 </select>
 
 <style>
