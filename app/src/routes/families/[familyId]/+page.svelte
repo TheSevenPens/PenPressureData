@@ -7,6 +7,7 @@
 	import EstimatesSelect from "$lib/components/EstimatesSelect.svelte";
 	import ChartLegendTable from "$lib/components/ChartLegendTable.svelte";
 	import ModelStats from "$lib/components/ModelStats.svelte";
+	import FlagButton from "$lib/components/FlagButton.svelte";
 
 	const COLORS = [
 		"#4a6fa5",
@@ -173,6 +174,7 @@
 		<div class="page-header">
 			<div class="family-title">
 				<h2>{familyInfo.brand} / {familyInfo.familyName}</h2>
+				<FlagButton type="family" familyId={data.familyId} />
 				<span class="detail-counts">
 					{new Set(sessions.map((s) => s.pen)).size} models
 					/ {new Set(sessions.map((s) => s.inventoryid)).size} pens

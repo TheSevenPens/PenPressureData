@@ -2,22 +2,27 @@
 	import {
 		togglePen,
 		toggleModel,
+		toggleFamily,
 		isPenFlagged,
 		isModelFlagged,
+		isFamilyFlagged,
 	} from "$lib/flagged.svelte.js";
 
-	let { type, inventoryid = "", brand = "", model = "" } = $props();
+	let { type, inventoryid = "", brand = "", model = "", familyId = "" } = $props();
 
 	let flagged = $derived(
 		type === "pen"
 			? isPenFlagged(inventoryid)
-			: isModelFlagged(brand, model),
+			: type === "family"
+				? isFamilyFlagged(familyId)
+				: isModelFlagged(brand, model),
 	);
 
 	function toggle(e) {
 		e.preventDefault();
 		e.stopPropagation();
 		if (type === "pen") togglePen(inventoryid);
+		else if (type === "family") toggleFamily(familyId);
 		else toggleModel(brand, model);
 	}
 </script>
