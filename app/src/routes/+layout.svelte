@@ -13,6 +13,7 @@
 		{ label: "Pens", href: `${base}/pens` },
 		{ label: "Sessions", href: `${base}/` },
 		{ label: "Flagged", href: `${base}/flagged` },
+		{ label: "Compare", href: `${base}/compare` },
 	];
 
 	function isActive(href) {
