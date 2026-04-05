@@ -193,6 +193,7 @@
 			const datasets = [];
 			for (const group of envelopeGroups) {
 				const subset = series.filter((s) => {
+					if (group.field === "_groupId") return s._groupId === group.key;
 					if (group.field === "penfamily") return s.penfamily === group.key;
 					return `${s.brand}||${s.model}` === group.key;
 				});

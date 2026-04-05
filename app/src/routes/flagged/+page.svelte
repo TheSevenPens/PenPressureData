@@ -4,9 +4,11 @@
 	import {
 		getFlaggedPens,
 		getFlaggedModels,
+		getFlaggedFamilies,
 		modelKey,
 		togglePen,
 		toggleModel,
+		toggleFamily,
 		clearAll,
 	} from "$lib/flagged.svelte.js";
 	import PressureChart from "$lib/components/PressureChart.svelte";
@@ -37,12 +39,21 @@
 
 	let flaggedPens = $derived(getFlaggedPens());
 	let flaggedModels = $derived(getFlaggedModels());
+	let flaggedFamilies = $derived(getFlaggedFamilies());
 
 	// Parse flagged model keys back to {brand, model}
 	let flaggedModelList = $derived(
 		[...flaggedModels].map((key) => {
 			const [brand, model] = key.split("||");
 			return { brand, model };
+		}),
+	);
+
+	// Parse flagged family keys back to {familyId, familyName}
+	let flaggedFamilyList = $derived(
+		[...flaggedFamilies].map((id) => {
+			const info = familyInfoMap[id];
+			return { familyId: id, familyName: info?.familyName || id, brand: info?.brand || "" };
 		}),
 	);
 
@@ -55,7 +66,8 @@
 				if (seen.has(s.sessionId)) continue;
 				if (
 					flaggedPens.has(s.inventoryid) ||
-					flaggedModels.has(modelKey(s.brand, s.pen))
+					flaggedModels.has(modelKey(s.brand, s.pen)) ||
+					(s.penfamily && flaggedFamilies.has(s.penfamily))
 				) {
 					seen.add(s.sessionId);
 					result.push(s);
@@ -213,6 +225,17 @@
 		</div>
 
 		<div class="flagged-items">
+			{#if flaggedFamilyList.length > 0}
+				<div class="flagged-group">
+					<span class="group-label">Families:</span>
+					{#each flaggedFamilyList as f}
+						<span class="flagged-pill">
+							<a href="{base}/families/{encodeURIComponent(f.familyId)}">{f.familyName}</a>
+							<button class="remove-btn" onclick={() => toggleFamily(f.familyId)} title="Remove">&times;</button>
+						</span>
+					{/each}
+				</div>
+			{/if}
 			{#if flaggedModelList.length > 0}
 				<div class="flagged-group">
 					<span class="group-label">Models:</span>

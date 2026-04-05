@@ -33,15 +33,19 @@ function parseTags(tags) {
 		.filter(Boolean);
 }
 
-// Build pen entity → family lookup from pen definition files
-function buildPenFamilyLookups() {
+// Build pen entity → family and tags lookups from pen definition files
+function buildPenLookups() {
 	const penEntityToFamily = {};
+	const penEntityToTags = {};
 	for (const [, module] of Object.entries(penModules)) {
 		const data = module.default ?? module;
 		const pens = data.Pens ?? [];
 		for (const pen of pens) {
 			if (pen.EntityId && pen.PenFamily) {
 				penEntityToFamily[pen.EntityId] = pen.PenFamily;
+			}
+			if (pen.EntityId && pen.Tags && pen.Tags.length > 0) {
+				penEntityToTags[pen.EntityId] = pen.Tags;
 			}
 		}
 	}
@@ -59,10 +63,10 @@ function buildPenFamilyLookups() {
 		}
 	}
 
-	return { penEntityToFamily, familyInfoMap };
+	return { penEntityToFamily, penEntityToTags, familyInfoMap };
 }
 
-const { penEntityToFamily, familyInfoMap } = buildPenFamilyLookups();
+const { penEntityToFamily, penEntityToTags, familyInfoMap } = buildPenLookups();
 
 function buildData() {
 	const allSessions = [];
@@ -91,6 +95,7 @@ function buildData() {
 				os: raw.OS || '',
 				notes: raw.Notes || '',
 				tags: parseTags(raw.tags),
+				penDefTags: (raw.PenEntityId && penEntityToTags[raw.PenEntityId]) || [],
 				records: raw.Records || [],
 			};
 
@@ -173,7 +178,21 @@ function buildData() {
 
 export const { allSessions, byBrand, sessionById } = buildData();
 export const brands = Object.keys(byBrand).sort();
-export { familyInfoMap };
+export { familyInfoMap, penEntityToTags };
+
+// Collect all unique tags from both pen definitions and session data
+export const allKnownTags = (() => {
+	const tags = new Set();
+	for (const s of allSessions) {
+		for (const t of s.tags) tags.add(t);
+		for (const t of s.penDefTags) tags.add(t);
+	}
+	// Also include tags from pen defs that may not have sessions
+	for (const tagList of Object.values(penEntityToTags)) {
+		for (const t of tagList) tags.add(t);
+	}
+	return [...tags].sort();
+})();
 
 // Build list of pen families that have pressure response data
 export const penFamilies = (() => {

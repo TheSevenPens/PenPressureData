@@ -2,6 +2,7 @@
 	import { base } from "$app/paths";
 	import { allSessions, penFamilies, familyInfoMap } from "$lib/data.js";
 	import BrandFilter from "$lib/components/BrandFilter.svelte";
+	import FlagButton from "$lib/components/FlagButton.svelte";
 
 	const allFamilyRows = (() => {
 		const map = {};
@@ -25,6 +26,7 @@
 		return Object.values(map)
 			.map(({ models, pens, ...rest }) => ({
 				...rest,
+				modelNames: [...models].sort(),
 				models: models.size,
 				pens: pens.size,
 			}))
@@ -63,20 +65,12 @@
 </script>
 
 <div class="families-page">
-	<div class="layout-grid">
-		<div class="sidebar">
-			<div class="filter-box">
-				<h3>Brand</h3>
-				<BrandFilter bind:selectedBrand />
-			</div>
-		</div>
-
-		<div class="main-column">
-			<div class="controls">
-				<span class="count"
-					>{filteredFamilies.length} famil{filteredFamilies.length !== 1 ? "ies" : "y"}</span
-				>
-			</div>
+	<div class="top-bar">
+		<BrandFilter bind:selectedBrand />
+		<span class="count"
+			>{filteredFamilies.length} famil{filteredFamilies.length !== 1 ? "ies" : "y"}</span
+		>
+	</div>
 
 			{#if filteredFamilies.length > 0}
 				<table class="families-table">
@@ -88,86 +82,52 @@
 							<th class="sortable" onclick={() => toggleSort("family")}>
 								Family {#if sortBy === "family"}{sortDesc ? "▼" : "▲"}{/if}
 							</th>
-							<th class="num sortable" onclick={() => toggleSort("models")}>
-								Models {#if sortBy === "models"}{sortDesc ? "▼" : "▲"}{/if}
-							</th>
+							<th>Pen Models</th>
 							<th class="num sortable" onclick={() => toggleSort("pens")}>
 								Pens {#if sortBy === "pens"}{sortDesc ? "▼" : "▲"}{/if}
 							</th>
 							<th class="num sortable" onclick={() => toggleSort("sessions")}>
 								Sessions {#if sortBy === "sessions"}{sortDesc ? "▼" : "▲"}{/if}
 							</th>
+							<th class="flag-col"></th>
 						</tr>
 					</thead>
 					<tbody>
 						{#each filteredFamilies as f}
 							<tr>
 								<td>{f.brand}</td>
-								<td>
+								<td class="family-name">
 									<a href="{base}/families/{encodeURIComponent(f.familyId)}">{f.familyName}</a>
 								</td>
-								<td class="num">{f.models}</td>
+								<td class="model-list">{f.modelNames.join(", ")}</td>
 								<td class="num">{f.pens}</td>
 								<td class="num">{f.sessions}</td>
+								<td class="flag-col"><FlagButton type="family" familyId={f.familyId} /></td>
 							</tr>
 						{/each}
 					</tbody>
 				</table>
-			{:else}
-				<p class="empty">No pen families with pressure response data{selectedBrand ? ` for ${selectedBrand}` : ""}.</p>
-			{/if}
-		</div>
-	</div>
+		{:else}
+			<p class="empty">No pen families with pressure response data{selectedBrand ? ` for ${selectedBrand}` : ""}.</p>
+		{/if}
 </div>
 
 <style>
 	.families-page {
-		max-width: 800px;
+		max-width: 100%;
 	}
 
-	.layout-grid {
-		display: grid;
-		grid-template-columns: 300px 1fr;
-		gap: 2rem;
-		align-items: start;
-	}
-
-	@media (max-width: 900px) {
-		.layout-grid {
-			grid-template-columns: 1fr;
-		}
-	}
-
-	.sidebar {
-		display: flex;
-		flex-direction: column;
-		gap: 1.5rem;
-	}
-
-	.filter-box {
-		background: #fcfcfc;
-		border: 1px solid #e0e0e0;
-		border-radius: 6px;
-		padding: 1rem;
-	}
-
-	.filter-box h3 {
-		margin: 0 0 0.75rem 0;
-		font-size: 0.9rem;
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-		color: #555;
-	}
-
-	.controls {
+	.top-bar {
 		display: flex;
 		align-items: center;
-		margin-bottom: 0.75rem;
+		gap: 1.5rem;
+		margin-bottom: 1rem;
 	}
 
 	.count {
 		font-size: 0.85rem;
 		color: #666;
+		white-space: nowrap;
 	}
 
 	.families-table {
@@ -201,10 +161,25 @@
 	.families-table tbody td {
 		padding: 0.25rem 1rem;
 		border-bottom: 1px solid #eee;
+		white-space: nowrap;
+	}
+
+	.model-list {
+		white-space: normal;
+		word-break: break-all;
+		font-size: 0.8rem;
+		color: #555;
+		max-width: 300px;
 	}
 
 	.num {
 		text-align: right;
+	}
+
+	.flag-col {
+		width: 2rem;
+		text-align: center;
+		padding: 0.25rem 0.5rem;
 	}
 
 	.empty {
