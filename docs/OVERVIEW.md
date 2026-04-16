@@ -78,6 +78,15 @@ The envelope view aggregates multiple sessions into a single visualization showi
 - **Range selection**: Min/Max, P05/P95, or P25/P75 -- controls how wide the shaded area is
 - **Group by model**: On the Flagged page, shows a separate colored envelope per model for visual comparison
 
+### Defective Pens
+
+Some individual pen units are marked as defective in the DrawTabData inventory (e.g. a pen with unusually low maximum pressure). The app:
+
+- Shows a ⚠ indicator for defective pens in the Pens listing, chart legend, and pen detail page
+- Displays the defect kind and notes when you hover the indicator or visit the pen detail page
+- **Hides** defective sessions by default on pressure charts so outliers don't distort the view -- they remain listed in the chart legend (dimmed, with the ⚠) and can be toggled back on with the checkbox
+- **Excludes** defective pens from aggregated statistics (min/median/max) and envelope curves, with an explicit "Excluding N defective pens" note shown next to the stats
+
 ## Current Version
 
 Version 0.13 -- under active development.

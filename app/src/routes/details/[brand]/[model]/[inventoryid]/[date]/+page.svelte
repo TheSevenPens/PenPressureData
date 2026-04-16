@@ -84,6 +84,8 @@
 						color: COLOR,
 						inventoryid: session.inventoryid,
 						date: session.date,
+						defects: session.defects,
+						isDefective: session.isDefective,
 						...session.pValues,
 					},
 				]

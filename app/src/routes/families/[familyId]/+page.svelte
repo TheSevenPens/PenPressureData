@@ -22,12 +22,6 @@
 		"#8e44ad",
 	];
 
-	function isOutlierSession(session) {
-		return session.tags?.some(
-			(tag) => String(tag).trim().toLowerCase() === "outlier",
-		);
-	}
-
 	let { data } = $props();
 
 	let familyInfo = $derived(
@@ -64,11 +58,12 @@
 				label: `${s.pen} / ${s.inventoryid} ${s.date}`,
 				records: s.records,
 				color: colorMap[s.pen],
-				show: !isOutlierSession(s),
 				inventoryid: s.inventoryid,
 				date: s.date,
 				brand: s.brand,
 				model: s.pen,
+				defects: s.defects,
+				isDefective: s.isDefective,
 				...s.pValues,
 			}));
 		})(),
@@ -81,10 +76,11 @@
 	let chartRef = $state(null);
 	let envelopeRange = $state("minmax");
 
+	// Hide defective sessions by default on chart (still listed in legend with ⚠)
 	$effect(() => {
 		if (defaultsApplied || allSeries.length === 0) return;
 		const defaultHidden = allSeries
-			.filter((s) => s.show === false)
+			.filter((s) => s.isDefective)
 			.map((s) => s.label);
 		hiddenLabels = new Set(defaultHidden);
 		defaultsApplied = true;

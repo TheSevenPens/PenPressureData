@@ -23,12 +23,6 @@
 		"#8e44ad",
 	];
 
-	function isOutlierSession(session) {
-		return session.tags?.some(
-			(tag) => String(tag).trim().toLowerCase() === "outlier",
-		);
-	}
-
 	let { data } = $props();
 
 	// --- Pen navigation ---
@@ -68,11 +62,15 @@
 			label: s.date,
 			records: s.records,
 			color: COLORS[i % COLORS.length],
-			show: !isOutlierSession(s),
 			date: s.date,
+			defects: s.defects,
+			isDefective: s.isDefective,
 			...s.pValues,
 		})),
 	);
+
+	// Aggregate defects from any session for this pen (all sessions share inventoryid)
+	let penDefects = $derived(pen?.defects || []);
 
 	let hiddenLabels = $state(new Set());
 	let defaultsApplied = $state(false);
@@ -80,10 +78,11 @@
 	let zoom = $state("normal");
 	let chartRef = $state(null);
 
+	// Hide defective sessions by default on chart (still listed in legend with ⚠)
 	$effect(() => {
 		if (defaultsApplied || allSeries.length === 0) return;
 		const defaultHidden = allSeries
-			.filter((s) => s.show === false)
+			.filter((s) => s.isDefective)
 			.map((s) => s.label);
 		hiddenLabels = new Set(defaultHidden);
 		defaultsApplied = true;
@@ -172,6 +171,18 @@
 			/>
 		</div>
 
+		{#if penDefects.length > 0}
+			<div class="defect-banner">
+				<span class="warn-icon">&#9888;</span>
+				<strong>Defective pen.</strong>
+				{#each penDefects as d, i}
+					<span class="defect-item">
+						<span class="defect-kind">{d.Kind}</span>{#if d.Notes} — {d.Notes}{/if}
+					</span>{#if i < penDefects.length - 1}; {/if}
+				{/each}
+			</div>
+		{/if}
+
 		<div class="chart-area">
 			<div class="chart-header">
 				<h2>Pressure Response</h2>
@@ -234,6 +245,24 @@
 	.page-header :global(.breadcrumb-bar) {
 		margin-bottom: 0;
 		flex: 1;
+	}
+
+	.defect-banner {
+		background: #fff3cd;
+		border: 1px solid #ffc107;
+		border-radius: 4px;
+		padding: 0.6rem 0.9rem;
+		font-size: 0.85rem;
+		color: #856404;
+		margin-bottom: 1.5rem;
+	}
+	.warn-icon {
+		margin-right: 0.4rem;
+		font-size: 1rem;
+	}
+	.defect-kind {
+		font-family: monospace;
+		font-weight: 600;
 	}
 
 	.chart-area {

@@ -17,7 +17,6 @@
 	const tagOpts = allKnownTags.map(t => ({ v: t, l: t }));
 	function optsFor(type) { return type === "pen" ? penOpts : type === "model" ? modelOpts : type === "family" ? famOpts : type === "tag" ? tagOpts : []; }
 	function fmtItem(item) { if (item.type === "model") { const p = item.value.split("||"); return `${p[0]} / ${p[1]}`; } if (item.type === "family") return familyInfoMap[item.value]?.familyName || item.value; return item.value; }
-	function isOutlier(s) { return s.tags?.some(t => String(t).trim().toLowerCase() === "outlier"); }
 
 	// Groups include transient _addType/_addValue for the add-item form
 	let groups = $state([]);
@@ -59,14 +58,19 @@
 		const r = [];
 		for (let i = 0; i < gSess.length; i++) {
 			const { g, ss } = gSess[i]; const c = COLORS[i % COLORS.length];
-			for (const s of ss) r.push({ label: `${g.name}: ${s.brand} / ${s.pen} / ${s.inventoryid} ${s.date}`, records: s.records, color: c, show: !isOutlier(s), inventoryid: s.inventoryid, date: s.date, brand: s.brand, model: s.pen, penfamily: s.penfamily, _groupId: g.id, ...s.pValues });
+			for (const s of ss) r.push({ label: `${g.name}: ${s.brand} / ${s.pen} / ${s.inventoryid} ${s.date}`, records: s.records, color: c, inventoryid: s.inventoryid, date: s.date, brand: s.brand, model: s.pen, penfamily: s.penfamily, defects: s.defects, isDefective: s.isDefective, _groupId: g.id, ...s.pValues });
 		}
 		return r;
 	})());
 
 	let envGroups = $derived(showEstimates === "envelope" && groups.length > 0 ? groups.map((g, i) => ({ key: g.id, field: "_groupId", label: g.name, color: COLORS[i % COLORS.length] })) : null);
 
-	$effect(() => { if (defaultsApplied || allSeries.length === 0) return; hiddenLabels = new Set(allSeries.filter(s => !s.show).map(s => s.label)); defaultsApplied = true; });
+	// Hide defective sessions by default on chart (still listed in legend with ⚠)
+	$effect(() => {
+		if (defaultsApplied || allSeries.length === 0) return;
+		hiddenLabels = new Set(allSeries.filter((s) => s.isDefective).map((s) => s.label));
+		defaultsApplied = true;
+	});
 
 	function doExport(a) { if (a === "copy-chart") chartRef?.copyChart(); else if (a === "export-png") chartRef?.exportPng(); else if (a === "copy-data") chartRef?.copyData(); else if (a === "export-data") chartRef?.exportData(); }
 	function toggleS(l) { const n = new Set(hiddenLabels); if (n.has(l)) n.delete(l); else n.add(l); hiddenLabels = n; }

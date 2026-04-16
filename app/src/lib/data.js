@@ -18,6 +18,18 @@ const penFamilyModules = import.meta.glob(
 	{ eager: true }
 );
 
+// Load inventory files to look up Defects by InventoryId
+const inventoryModules = import.meta.glob(
+	'../../../data-repo/data/inventory/*-pens.json',
+	{ eager: true }
+);
+
+// Load defect kinds reference (controlled vocabulary)
+const defectKindsModule = import.meta.glob(
+	'../../../data-repo/data/reference/defect-kinds.json',
+	{ eager: true }
+);
+
 function parseTags(tags) {
 	if (Array.isArray(tags)) {
 		return tags
@@ -68,6 +80,37 @@ function buildPenLookups() {
 
 const { penEntityToFamily, penEntityToTags, familyInfoMap } = buildPenLookups();
 
+// Build inventory defects lookup: InventoryId → Defects[]
+function buildDefectsLookup() {
+	const inventoryIdToDefects = {};
+	for (const [, module] of Object.entries(inventoryModules)) {
+		const data = module.default ?? module;
+		const items = data.InventoryPens ?? [];
+		for (const item of items) {
+			if (item.InventoryId && Array.isArray(item.Defects) && item.Defects.length > 0) {
+				inventoryIdToDefects[item.InventoryId] = item.Defects;
+			}
+		}
+	}
+
+	const defectKindInfo = {};
+	for (const [, module] of Object.entries(defectKindsModule)) {
+		const data = module.default ?? module;
+		const kinds = data.DefectKinds ?? data.defectKinds ?? [];
+		for (const k of kinds) {
+			defectKindInfo[k.Kind] = {
+				kind: k.Kind,
+				description: k.Description || '',
+				appliesTo: k.AppliesTo || [],
+			};
+		}
+	}
+
+	return { inventoryIdToDefects, defectKindInfo };
+}
+
+const { inventoryIdToDefects, defectKindInfo } = buildDefectsLookup();
+
 function buildData() {
 	const allSessions = [];
 
@@ -80,6 +123,9 @@ function buildData() {
 
 			// Look up pen family from pen definitions
 			const familyId = (raw.PenEntityId && penEntityToFamily[raw.PenEntityId]) || '';
+
+			// Look up defects from inventory
+			const defects = inventoryIdToDefects[raw.InventoryId] || [];
 
 			// Map DrawTabData field names to the format the app expects
 			const mapped = {
@@ -96,6 +142,8 @@ function buildData() {
 				notes: raw.Notes || '',
 				tags: parseTags(raw.tags),
 				penDefTags: (raw.PenEntityId && penEntityToTags[raw.PenEntityId]) || [],
+				defects,
+				isDefective: defects.length > 0,
 				records: raw.Records || [],
 			};
 
@@ -178,7 +226,7 @@ function buildData() {
 
 export const { allSessions, byBrand, sessionById } = buildData();
 export const brands = Object.keys(byBrand).sort();
-export { familyInfoMap, penEntityToTags };
+export { familyInfoMap, penEntityToTags, inventoryIdToDefects, defectKindInfo };
 
 // Collect all unique tags from both pen definitions and session data
 export const allKnownTags = (() => {

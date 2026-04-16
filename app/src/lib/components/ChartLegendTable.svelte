@@ -48,6 +48,14 @@
         showBrand = false,
         onToggleSeries,
     } = $props();
+
+    // Whether any series has defects — used to decide if a defects column is rendered
+    let anyDefects = $derived(series.some((s) => s.defects?.length > 0));
+
+    function defectTitle(s) {
+        if (!s.defects?.length) return "";
+        return s.defects.map((d) => d.Notes ? `${d.Kind}: ${d.Notes}` : d.Kind).join(" | ");
+    }
 </script>
 
 <table class="legend-table">
@@ -55,6 +63,7 @@
         <tr>
             <th class="centered">Show</th>
             <th></th>
+            {#if anyDefects}<th class="centered" title="Defect">&#9888;</th>{/if}
             {#if showBrand}
                 <th>Brand</th>
                 <th>Model</th>
@@ -95,6 +104,13 @@
                 <td>
                     <span class="swatch" style="background: {s.color}"></span>
                 </td>
+                {#if anyDefects}
+                    <td class="centered">
+                        {#if s.defects?.length}
+                            <span class="defect-icon" title={defectTitle(s)}>&#9888;</span>
+                        {/if}
+                    </td>
+                {/if}
                 {#if showBrand}
                     <td>{s.brand}</td>
                     <td>
@@ -204,5 +220,11 @@
     }
     .right {
         text-align: right;
+    }
+
+    .defect-icon {
+        color: #c0922a;
+        cursor: help;
+        font-size: 1rem;
     }
 </style>

@@ -3,14 +3,33 @@
 
     /**
      * @type {{
-     *   sessions: Array<{ pValues: Record<string, number|null> }>
+     *   sessions: Array<{ pValues: Record<string, number|null>, defects?: Array<{Kind: string, Notes: string}>, isDefective?: boolean, inventoryid?: string }>
      * }}
      */
     let { sessions } = $props();
 
+    // Split into included (non-defective) and excluded (defective)
+    let includedSessions = $derived(sessions.filter((s) => !s.isDefective));
+    let excludedSessions = $derived(sessions.filter((s) => s.isDefective));
+
+    // Deduplicate excluded pens by inventoryid (a pen might have multiple sessions)
+    let excludedPens = $derived(
+        (() => {
+            const seen = new Map();
+            for (const s of excludedSessions) {
+                if (!seen.has(s.inventoryid)) {
+                    seen.set(s.inventoryid, {
+                        inventoryid: s.inventoryid,
+                        kinds: (s.defects || []).map((d) => d.Kind),
+                    });
+                }
+            }
+            return [...seen.values()];
+        })(),
+    );
+
     function calcStats(pKey) {
-        // Extract all non-null values for this P mark across all sessions
-        const values = sessions
+        const values = includedSessions
             .map((s) => (s.pValues ? s.pValues[pKey] : null))
             .filter((v) => v !== null)
             .sort((a, b) => a - b);
@@ -70,6 +89,18 @@
             {/each}
         </tbody>
     </table>
+
+    {#if excludedPens.length > 0}
+        <p class="excluded-note">
+            <span class="warn-icon">&#9888;</span>
+            Excluding {excludedPens.length} defective pen{excludedPens.length !== 1 ? "s" : ""}:
+            {#each excludedPens as p, i}
+                <span class="excluded-pen">
+                    {p.inventoryid} ({p.kinds.join(", ")})
+                </span>{#if i < excludedPens.length - 1}, {/if}
+            {/each}
+        </p>
+    {/if}
 </div>
 
 <style>
@@ -123,5 +154,25 @@
 
     .mono {
         font-family: monospace;
+    }
+
+    .excluded-note {
+        font-size: 0.8rem;
+        color: #856404;
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 4px;
+        padding: 0.5rem 0.75rem;
+        margin: 0.75rem 0 0 0;
+        max-width: 800px;
+    }
+
+    .warn-icon {
+        margin-right: 0.35rem;
+    }
+
+    .excluded-pen {
+        font-family: monospace;
+        font-size: 0.75rem;
     }
 </style>

@@ -4,7 +4,7 @@
 	import BrandFilter from "$lib/components/BrandFilter.svelte";
 	import ModelFilter from "$lib/components/ModelFilter.svelte";
 	import FlagButton from "$lib/components/FlagButton.svelte";
-	import { penFamilies } from "$lib/data.js";
+	import { penFamilies, inventoryIdToDefects } from "$lib/data.js";
 
 	const allPens = (() => {
 		const map = {};
@@ -15,6 +15,7 @@
 					model: s.pen,
 					penfamily: s.penfamily,
 					inventoryid: s.inventoryid,
+					defects: inventoryIdToDefects[s.inventoryid] || [],
 					count: 0,
 				};
 			}
@@ -151,6 +152,7 @@
 									? "▼"
 									: "▲"}{/if}
 						</th>
+						<th class="defect-col" title="Defect">&#9888;</th>
 						<th class="flag-col"></th>
 					</tr>
 				</thead>
@@ -176,6 +178,11 @@
 								>
 							</td>
 							<td class="num">{pen.count}</td>
+							<td class="defect-col">
+								{#if pen.defects.length > 0}
+									<span class="defect-icon" title={pen.defects.map(d => d.Notes ? `${d.Kind}: ${d.Notes}` : d.Kind).join(" | ")}>&#9888;</span>
+								{/if}
+							</td>
 							<td class="flag-col"><FlagButton type="pen" inventoryid={pen.inventoryid} /></td>
 						</tr>
 					{/each}
@@ -289,5 +296,17 @@
 		width: 2rem;
 		text-align: center;
 		padding: 0.25rem 0.5rem;
+	}
+
+	.defect-col {
+		width: 2rem;
+		text-align: center;
+		padding: 0.25rem 0.5rem;
+	}
+
+	.defect-icon {
+		color: #c0922a;
+		cursor: help;
+		font-size: 1rem;
 	}
 </style>

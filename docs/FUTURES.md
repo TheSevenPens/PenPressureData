@@ -31,7 +31,7 @@ The Initial Activation Force (P00) values are estimates derived from extrapolati
 
 - **Automated validation pipeline** -- Run checks on data files before they enter the dataset: monotonicity, completeness, reasonable force ranges, consistent metadata.
 - **Data quality dashboard** -- A dedicated view showing the health of the dataset: which pens need re-measurement, which sessions have anomalies, overall coverage gaps.
-- **Outlier detection refinement** -- Currently outliers are manually tagged. Automated detection based on statistical deviation from a pen model's typical curve could supplement manual tagging.
+- **Automated defect detection** -- Currently defects are recorded manually in DrawTabData's inventory (`Defects[]` array with controlled vocabulary). Automated detection based on statistical deviation from a pen model's typical curve could suggest candidate defects for review.
 
 ## Comparison and Analysis Features
 

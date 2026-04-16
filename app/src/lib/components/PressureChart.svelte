@@ -88,9 +88,12 @@
 		const useP05P95 = envelopeRange === "p05p95";
 		const useP25P75 = envelopeRange === "p25p75";
 
+		// Exclude defective sessions from envelope computation
+		const activeSubset = seriesSubset.filter((s) => !s.isDefective);
+
 		for (const y of LEVELS) {
 			const xs = [];
-			for (const s of seriesSubset) {
+			for (const s of activeSubset) {
 				for (const [rx, ry] of s.records) {
 					if (Math.abs(ry - y) < 0.01) {
 						xs.push(rx);

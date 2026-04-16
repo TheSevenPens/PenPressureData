@@ -56,9 +56,15 @@ Each `Records` entry is a pair: `[physical_force_gf, logical_pressure_pct]`.
 
 Responsible for loading raw data from the DrawTabData submodule and converting it into the app's internal format:
 
-1. **Vite glob import** loads all `*-pressure-response.json` files at build time
+1. **Vite glob imports** load all relevant JSON files at build time:
+   - `*-pressure-response.json` — session measurements
+   - `*-pens.json` — pen model definitions (for family and tag lookup)
+   - `*-pen-families.json` — pen family definitions
+   - `inventory/*-pens.json` — physical unit inventory (for defects)
+   - `reference/defect-kinds.json` — controlled defect vocabulary
 2. **Field mapping** converts DrawTabData field names (e.g. `PenEntityId`, `InventoryId`, `TabletEntityId`) to app-internal names (e.g. `pen`, `inventoryid`, `tablet`)
 3. **Tag parsing** normalizes the `tags` field from CSV strings or arrays into a consistent array format
+4. **Defect attachment** looks up each session's inventory unit and attaches `defects` (array of `{Kind, Notes}`) and `isDefective` (boolean) to the session
 
 The ingestion layer isolates the rest of the app from changes in the DrawTabData schema -- if field names change upstream, only the mapping in `data.js` needs updating.
 
@@ -77,6 +83,19 @@ Operates on the ingested session data to compute derived values and organize ses
 These estimates allow meaningful P00/P100 values even when the raw data doesn't include measurements at exactly 0% or 100%.
 
 > **Note:** The interpolation and P-value estimation logic currently lives in this app (`interpolate.js`), but is expected to migrate into the DrawTabData submodule's shared libraries in the future, since it is useful for all consumers of that dataset.
+
+#### Defects System (`data.js`)
+
+Physical pen units can be marked defective in DrawTabData's inventory files with a structured `Defects[]` array (controlled vocabulary from `data/reference/defect-kinds.json`). The app:
+
+- Builds `inventoryIdToDefects` and `defectKindInfo` lookup maps
+- Attaches `defects` and `isDefective` to every session
+- Parent pages auto-hide defective sessions on the chart by default (via `hiddenLabels` populated from `isDefective`) so their outlier values don't distort the visualization
+- Defective sessions remain listed in the chart legend (dimmed, with a ⚠ icon and tooltip) so the user can click the checkbox to include them on demand
+- `ModelStats` and `PressureChart` envelope computation **exclude** defective sessions from aggregate calculations
+- Exclusion is made explicit via a warning note listing which pens were excluded and why
+
+Exports: `inventoryIdToDefects`, `defectKindInfo`
 
 #### Hierarchical Indexing (`data.js`)
 

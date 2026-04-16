@@ -31,12 +31,6 @@
 		"#8e44ad",
 	];
 
-	function isOutlierSession(session) {
-		return session.tags?.some(
-			(tag) => String(tag).trim().toLowerCase() === "outlier",
-		);
-	}
-
 	let flaggedPens = $derived(getFlaggedPens());
 	let flaggedModels = $derived(getFlaggedModels());
 	let flaggedFamilies = $derived(getFlaggedFamilies());
@@ -92,12 +86,13 @@
 				label: `${s.brand} / ${s.pen} / ${s.inventoryid} ${s.date}`,
 				records: s.records,
 				color: colorMap[modelKey(s.brand, s.pen)],
-				show: !isOutlierSession(s),
 				inventoryid: s.inventoryid,
 				date: s.date,
 				brand: s.brand,
 				model: s.pen,
 				penfamily: s.penfamily,
+				defects: s.defects,
+				isDefective: s.isDefective,
 				...s.pValues,
 			}));
 		})(),
@@ -110,6 +105,16 @@
 	let chartRef = $state(null);
 	let envelopeGroupBy = $state("none");
 	let envelopeRange = $state("minmax");
+
+	// Hide defective sessions by default on chart (still listed in legend with ⚠)
+	$effect(() => {
+		if (defaultsApplied || allSeries.length === 0) return;
+		const defaultHidden = allSeries
+			.filter((s) => s.isDefective)
+			.map((s) => s.label);
+		hiddenLabels = new Set(defaultHidden);
+		defaultsApplied = true;
+	});
 
 	// Envelope grouping by model or family
 	let envelopeGroups = $derived(
@@ -147,15 +152,6 @@
 			return seen.size > 0 ? [...seen.values()] : null;
 		})(),
 	);
-
-	$effect(() => {
-		if (defaultsApplied || allSeries.length === 0) return;
-		const defaultHidden = allSeries
-			.filter((s) => s.show === false)
-			.map((s) => s.label);
-		hiddenLabels = new Set(defaultHidden);
-		defaultsApplied = true;
-	});
 
 	function handleExport(action) {
 		if (action === "copy-chart") chartRef?.copyChart();
