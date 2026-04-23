@@ -138,24 +138,32 @@ SvelteKit file-based routing provides the page hierarchy:
 
 ```
 /                              Sessions listing (all sessions, filterable)
-/models                        Pen models overview
+/penmodels                     Pen models overview
+/penfamilies                   Pen families overview
 /pens                          Individual pen units overview
-/flagged                       Flagged pens/models comparison view
-/details/[brand]/[model]       All sessions for a pen model (chart + stats)
-/details/[brand]/[model]/[inventoryid]          Sessions for a specific pen unit
-/details/[brand]/[model]/[inventoryid]/[date]   Single measurement session
+/flagged                       Flagged pens/models/families comparison view
+/compare                       Ad-hoc comparison groups
+/dataquality                   Automated data-quality checks
+/about                         About page
+/penmodel/[entityId]           All sessions for a pen model (e.g. /penmodel/wacom.pen.kp504e)
+/penfamily/[entityId]          All sessions for a pen family (e.g. /penfamily/wacom.penfamily.wacom_kpgen2)
+/inventorypen/[inventoryId]    Sessions for a specific pen unit (e.g. /inventorypen/wap.0004)
+/session/[sessionId]           Single measurement session (e.g. /session/wap.0004_2024-09-02)
 ```
 
-The layout component (`+layout.svelte`) provides consistent header navigation with a badge count on the Flagged tab and detects route depth for active tab highlighting.
+URLs use lowercase DrawTabData entity IDs throughout, aligning with the sister project DrawTabDataExplorer.
+
+The layout component (`+layout.svelte`) provides consistent header navigation with a badge count on the Flagged tab and maps detail-page URL prefixes to their parent list tab for active highlighting.
 
 ### 6. Flagging System (`app/src/lib/flagged.svelte.js`)
 
-A reactive store using Svelte 5 runes that manages two sets of flagged items:
+A reactive store using Svelte 5 runes that manages three sets of flagged items (V2 format, keyed by lowercase entity IDs):
 
-- **Flagged pens** -- individual inventory IDs (e.g. `"WAP.0004"`)
-- **Flagged models** -- brand+model compound keys (e.g. `"WACOM||KP504E"`)
+- **Flagged pens** — lowercase inventory IDs (e.g. `"wap.0004"`), stored under `flaggedPensV2`
+- **Flagged models** — pen entity IDs (e.g. `"wacom.pen.kp504e"`), stored under `flaggedModelsV2`
+- **Flagged families** — family entity IDs (e.g. `"wacom.penfamily.wacom_kpgen2"`), stored under `flaggedFamiliesV2`
 
-Flagging a model includes all current and future sessions for that brand+model. Flagging a pen includes all sessions for that specific inventory ID. Both sets are persisted to localStorage.
+Flagging a model includes all current and future sessions for that pen model. Flagging a family includes all pens in that family. Flagging a pen includes all sessions for that specific inventory ID. All three sets are persisted to localStorage.
 
 Flag buttons appear on the Models and Pens listing pages (as a column in each table row) and on model/pen detail page headers.
 

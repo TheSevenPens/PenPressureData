@@ -1,11 +1,10 @@
 <script>
 	import { base } from "$app/paths";
-	import { allSessions, familyInfoMap } from "$lib/data.js";
+	import { allSessions, familyInfoMap, familyEntityIdToFamilyId, familyIdToEntityId } from "$lib/data.js";
 	import {
 		getFlaggedPens,
 		getFlaggedModels,
 		getFlaggedFamilies,
-		modelKey,
 		togglePen,
 		toggleModel,
 		toggleFamily,
@@ -35,19 +34,30 @@
 	let flaggedModels = $derived(getFlaggedModels());
 	let flaggedFamilies = $derived(getFlaggedFamilies());
 
-	// Parse flagged model keys back to {brand, model}
+	// Flagged model entity IDs → list of { entityId, brand, model } for pills
+	// (look up brand/model from any session that has that entity ID)
 	let flaggedModelList = $derived(
-		[...flaggedModels].map((key) => {
-			const [brand, model] = key.split("||");
-			return { brand, model };
+		[...flaggedModels].map((entityId) => {
+			const s = allSessions.find((s) => s.penEntityId === entityId);
+			return {
+				entityId,
+				brand: s?.brand || "",
+				model: s?.pen || entityId,
+			};
 		}),
 	);
 
-	// Parse flagged family keys back to {familyId, familyName}
+	// Flagged family entity IDs → list of { entityId, familyId, familyName, brand }
 	let flaggedFamilyList = $derived(
-		[...flaggedFamilies].map((id) => {
-			const info = familyInfoMap[id];
-			return { familyId: id, familyName: info?.familyName || id, brand: info?.brand || "" };
+		[...flaggedFamilies].map((entityId) => {
+			const familyId = familyEntityIdToFamilyId[entityId] || "";
+			const info = familyInfoMap[familyId];
+			return {
+				entityId,
+				familyId,
+				familyName: info?.familyName || entityId,
+				brand: info?.brand || "",
+			};
 		}),
 	);
 
@@ -58,10 +68,12 @@
 			const result = [];
 			for (const s of allSessions) {
 				if (seen.has(s.sessionId)) continue;
+				const invLower = s.inventoryid ? s.inventoryid.toLowerCase() : "";
+				const familyEntityId = s.penfamily ? familyIdToEntityId[s.penfamily] : null;
 				if (
-					flaggedPens.has(s.inventoryid) ||
-					flaggedModels.has(modelKey(s.brand, s.pen)) ||
-					(s.penfamily && flaggedFamilies.has(s.penfamily))
+					flaggedPens.has(invLower) ||
+					flaggedModels.has(s.penEntityId) ||
+					(familyEntityId && flaggedFamilies.has(familyEntityId))
 				) {
 					seen.add(s.sessionId);
 					result.push(s);
@@ -71,26 +83,27 @@
 		})(),
 	);
 
-	// Build series with colors per model
+	// Build series with colors per model (keyed on penEntityId)
 	let allSeries = $derived(
 		(() => {
 			const colorMap = {};
 			let colorIndex = 0;
 			for (const s of matchingSessions) {
-				const mk = modelKey(s.brand, s.pen);
-				if (!(mk in colorMap)) {
-					colorMap[mk] = COLORS[colorIndex++ % COLORS.length];
+				if (!(s.penEntityId in colorMap)) {
+					colorMap[s.penEntityId] = COLORS[colorIndex++ % COLORS.length];
 				}
 			}
 			return matchingSessions.map((s) => ({
 				label: `${s.brand} / ${s.pen} / ${s.inventoryid} ${s.date}`,
 				records: s.records,
-				color: colorMap[modelKey(s.brand, s.pen)],
+				color: colorMap[s.penEntityId],
 				inventoryid: s.inventoryid,
 				date: s.date,
 				brand: s.brand,
 				model: s.pen,
+				penEntityId: s.penEntityId,
 				penfamily: s.penfamily,
+				sessionId: s.sessionId,
 				defects: s.defects,
 				isDefective: s.isDefective,
 				...s.pValues,
@@ -226,8 +239,8 @@
 					<span class="group-label">Families:</span>
 					{#each flaggedFamilyList as f}
 						<span class="flagged-pill">
-							<a href="{base}/families/{encodeURIComponent(f.familyId)}">{f.familyName}</a>
-							<button class="remove-btn" onclick={() => toggleFamily(f.familyId)} title="Remove">&times;</button>
+							<a href="{base}/penfamily/{encodeURIComponent(f.entityId)}">{f.familyName}</a>
+							<button class="remove-btn" onclick={() => toggleFamily(f.entityId)} title="Remove">&times;</button>
 						</span>
 					{/each}
 				</div>
@@ -237,8 +250,8 @@
 					<span class="group-label">Models:</span>
 					{#each flaggedModelList as m}
 						<span class="flagged-pill">
-							<a href="{base}/details/{encodeURIComponent(m.brand)}/{encodeURIComponent(m.model)}">{m.brand} / {m.model}</a>
-							<button class="remove-btn" onclick={() => toggleModel(m.brand, m.model)} title="Remove">&times;</button>
+							<a href="{base}/penmodel/{encodeURIComponent(m.entityId)}">{m.brand} / {m.model}</a>
+							<button class="remove-btn" onclick={() => toggleModel(m.entityId)} title="Remove">&times;</button>
 						</span>
 					{/each}
 				</div>
@@ -248,7 +261,7 @@
 					<span class="group-label">Pens:</span>
 					{#each [...flaggedPens] as penId}
 						<span class="flagged-pill">
-							{penId}
+							<a href="{base}/inventorypen/{encodeURIComponent(penId)}">{penId.toUpperCase()}</a>
 							<button class="remove-btn" onclick={() => togglePen(penId)} title="Remove">&times;</button>
 						</span>
 					{/each}
@@ -317,7 +330,7 @@
 			Use the flag button
 			<span class="flag-icon">&#9873;</span>
 			on the
-			<a href="{base}/models">Pen Models</a> or
+			<a href="{base}/penmodels">Pen Models</a> or
 			<a href="{base}/pens">Pens</a> pages to add items for comparison.
 		</p>
 	</div>

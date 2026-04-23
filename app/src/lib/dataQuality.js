@@ -51,7 +51,14 @@ export function findMissingLowEnd(allSessions, threshold = 0.5) {
 	const byPen = new Map();
 	for (const s of allSessions) {
 		if (!byPen.has(s.inventoryid)) {
-			byPen.set(s.inventoryid, { brand: s.brand, model: s.pen, inventoryid: s.inventoryid, lowestLogical: Infinity, sessionCount: 0 });
+			byPen.set(s.inventoryid, {
+				brand: s.brand,
+				model: s.pen,
+				penEntityId: s.penEntityId,
+				inventoryid: s.inventoryid,
+				lowestLogical: Infinity,
+				sessionCount: 0,
+			});
 		}
 		const entry = byPen.get(s.inventoryid);
 		entry.sessionCount++;
@@ -82,7 +89,14 @@ export function findSingleSessionPens(allSessions) {
 	for (const [id, sessions] of byPen) {
 		if (sessions.length === 1) {
 			const s = sessions[0];
-			out.push({ brand: s.brand, model: s.pen, inventoryid: id, date: s.date });
+			out.push({
+				brand: s.brand,
+				model: s.pen,
+				penEntityId: s.penEntityId,
+				inventoryid: id,
+				date: s.date,
+				sessionId: s.sessionId,
+			});
 		}
 	}
 	return out.sort((a, b) =>
@@ -104,7 +118,13 @@ export function findStaleMeasurements(allSessions, days = 365, now = new Date())
 	for (const s of allSessions) {
 		const existing = byPen.get(s.inventoryid);
 		if (!existing || s.date > existing.date) {
-			byPen.set(s.inventoryid, { brand: s.brand, model: s.pen, inventoryid: s.inventoryid, date: s.date });
+			byPen.set(s.inventoryid, {
+				brand: s.brand,
+				model: s.pen,
+				penEntityId: s.penEntityId,
+				inventoryid: s.inventoryid,
+				date: s.date,
+			});
 		}
 	}
 	const out = [];
@@ -113,7 +133,14 @@ export function findStaleMeasurements(allSessions, days = 365, now = new Date())
 		if (isNaN(last.getTime())) continue;
 		const daysAgo = Math.floor((now - last) / (1000 * 60 * 60 * 24));
 		if (daysAgo > days) {
-			out.push({ brand: entry.brand, model: entry.model, inventoryid: entry.inventoryid, lastDate: entry.date, daysAgo });
+			out.push({
+				brand: entry.brand,
+				model: entry.model,
+				penEntityId: entry.penEntityId,
+				inventoryid: entry.inventoryid,
+				lastDate: entry.date,
+				daysAgo,
+			});
 		}
 	}
 	return out.sort((a, b) => b.daysAgo - a.daysAgo);
@@ -132,7 +159,13 @@ export function findRecommendedForRemeasurement(allSessions) {
 
 	function tag(item, reason) {
 		if (!reasons.has(item.inventoryid)) {
-			reasons.set(item.inventoryid, { brand: item.brand, model: item.model, inventoryid: item.inventoryid, reasons: new Set() });
+			reasons.set(item.inventoryid, {
+				brand: item.brand,
+				model: item.model,
+				penEntityId: item.penEntityId,
+				inventoryid: item.inventoryid,
+				reasons: new Set(),
+			});
 		}
 		reasons.get(item.inventoryid).reasons.add(reason);
 	}

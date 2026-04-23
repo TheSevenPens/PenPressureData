@@ -1,10 +1,7 @@
 <script>
 	import { base } from "$app/paths";
-	import { allSessions } from "$lib/data.js";
-	import BrandFilter from "$lib/components/BrandFilter.svelte";
-	import ModelFilter from "$lib/components/ModelFilter.svelte";
+	import { allSessions, penFamilies, inventoryIdToDefects, brands } from "$lib/data.js";
 	import FlagButton from "$lib/components/FlagButton.svelte";
-	import { penFamilies, inventoryIdToDefects } from "$lib/data.js";
 
 	const allPens = (() => {
 		const map = {};
@@ -13,6 +10,8 @@
 				map[s.inventoryid] = {
 					brand: s.brand,
 					model: s.pen,
+					fullName: s.fullName,
+					penEntityId: s.penEntityId,
 					penfamily: s.penfamily,
 					inventoryid: s.inventoryid,
 					defects: inventoryIdToDefects[s.inventoryid] || [],
@@ -54,6 +53,17 @@
 		penFamilies.filter((f) => !selectedBrand || f.brand === selectedBrand),
 	);
 
+	// Unique model names visible in the current brand filter, sorted alphabetically.
+	let availableModels = $derived(
+		(() => {
+			const seen = new Set();
+			for (const s of allSessions) {
+				if (!selectedBrand || s.brand === selectedBrand) seen.add(s.pen);
+			}
+			return [...seen].sort();
+		})(),
+	);
+
 	let filteredPens = $derived(
 		allPens
 			.filter(
@@ -89,12 +99,21 @@
 		<div class="sidebar">
 			<div class="filter-box">
 				<h3>Brand</h3>
-				<BrandFilter bind:selectedBrand onchange={onBrandChange} />
+				<select
+					class="filter-select"
+					bind:value={selectedBrand}
+					onchange={onBrandChange}
+				>
+					<option value="">All</option>
+					{#each brands as b}
+						<option value={b}>{b}</option>
+					{/each}
+				</select>
 			</div>
 			{#if availableFamilies.length > 0}
 				<div class="filter-box">
 					<h3>Pen Family</h3>
-					<select class="family-select" bind:value={selectedFamily}>
+					<select class="filter-select" bind:value={selectedFamily}>
 						<option value="">All</option>
 						{#each availableFamilies as f}
 							<option value={f.familyId}>{f.familyName}</option>
@@ -102,10 +121,17 @@
 					</select>
 				</div>
 			{/if}
-			<div class="filter-box">
-				<h3>Model</h3>
-				<ModelFilter bind:selectedModel {selectedBrand} />
-			</div>
+			{#if availableModels.length > 0}
+				<div class="filter-box">
+					<h3>Model</h3>
+					<select class="filter-select" bind:value={selectedModel}>
+						<option value="">All</option>
+						{#each availableModels as m}
+							<option value={m}>{m}</option>
+						{/each}
+					</select>
+				</div>
+			{/if}
 		</div>
 
 		<div class="main-column">
@@ -160,21 +186,16 @@
 					{#each filteredPens as pen}
 						<tr>
 							<td>{pen.brand}</td>
-							<td>
+							<td class="model-cell">
 								<a
-									href="{base}/details/{encodeURIComponent(
-										pen.brand,
-									)}/{encodeURIComponent(pen.model)}"
-									>{pen.model}</a
+									href="{base}/penmodel/{encodeURIComponent(pen.penEntityId)}"
+									>{pen.fullName}</a
 								>
 							</td>
 							<td class="mono">
 								<a
-									href="{base}/details/{encodeURIComponent(
-										pen.brand,
-									)}/{encodeURIComponent(
-										pen.model,
-									)}/{pen.inventoryid}">{pen.inventoryid}</a
+									href="{base}/inventorypen/{encodeURIComponent(pen.inventoryid.toLowerCase())}"
+									>{pen.inventoryid}</a
 								>
 							</td>
 							<td class="num">{pen.count}</td>
@@ -194,7 +215,11 @@
 
 <style>
 	.pens-page {
-		max-width: 800px;
+		max-width: 1000px;
+	}
+
+	.pens-table tbody td.model-cell {
+		white-space: nowrap;
 	}
 
 	.layout-grid {
@@ -283,13 +308,14 @@
 		font-family: monospace;
 	}
 
-	.family-select {
+	.filter-select {
 		width: 100%;
 		font-size: 0.85rem;
 		padding: 0.3rem 0.4rem;
 		border: 1px solid #ccc;
 		border-radius: 4px;
 		cursor: pointer;
+		background: #fff;
 	}
 
 	.flag-col {

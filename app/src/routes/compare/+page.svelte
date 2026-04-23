@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from "svelte";
 	import { base } from "$app/paths";
-	import { allSessions, penFamilies, familyInfoMap, allKnownTags } from "$lib/data.js";
+	import { allSessions, penFamilies, familyInfoMap, familyEntityIdToFamilyId, familyIdToEntityId, allKnownTags } from "$lib/data.js";
 	import { resolveGroupSessions, findOverlaps } from "$lib/compare.svelte.js";
 	import { getFlaggedPens, getFlaggedModels, getFlaggedFamilies } from "$lib/flagged.svelte.js";
 	import PressureChart from "$lib/components/PressureChart.svelte";
@@ -12,12 +12,40 @@
 
 	const COLORS = ["#4a6fa5","#e94560","#2ecc71","#f39c12","#9b59b6","#1abc9c","#e74c3c","#3498db","#e67e22","#8e44ad"];
 
-	const penOpts = (() => { const s = new Set(); return allSessions.filter(x => { if (s.has(x.inventoryid)) return false; s.add(x.inventoryid); return true; }).map(x => ({ v: x.inventoryid, l: `${x.inventoryid} (${x.brand} / ${x.pen})` })).sort((a,b) => a.v.localeCompare(b.v)); })();
-	const modelOpts = (() => { const s = new Set(); return allSessions.filter(x => { const k = `${x.brand}||${x.pen}`; if (s.has(k)) return false; s.add(k); return true; }).map(x => ({ v: `${x.brand}||${x.pen}`, l: `${x.brand} / ${x.pen}` })).sort((a,b) => a.l.localeCompare(b.l)); })();
-	const famOpts = penFamilies.map(f => ({ v: f.familyId, l: f.familyName }));
+	// penOpts value = lowercase inventoryId
+	const penOpts = (() => {
+		const seen = new Set();
+		return allSessions
+			.filter(x => { if (seen.has(x.inventoryid)) return false; seen.add(x.inventoryid); return true; })
+			.map(x => ({ v: x.inventoryid.toLowerCase(), l: `${x.inventoryid} (${x.brand} / ${x.pen})` }))
+			.sort((a, b) => a.v.localeCompare(b.v));
+	})();
+	// modelOpts value = pen entity ID
+	const modelOpts = (() => {
+		const seen = new Set();
+		return allSessions
+			.filter(x => { if (!x.penEntityId || seen.has(x.penEntityId)) return false; seen.add(x.penEntityId); return true; })
+			.map(x => ({ v: x.penEntityId, l: `${x.brand} / ${x.pen}` }))
+			.sort((a, b) => a.l.localeCompare(b.l));
+	})();
+	// famOpts value = family entity ID
+	const famOpts = penFamilies
+		.filter(f => f.entityId)
+		.map(f => ({ v: f.entityId, l: f.familyName }));
 	const tagOpts = allKnownTags.map(t => ({ v: t, l: t }));
 	function optsFor(type) { return type === "pen" ? penOpts : type === "model" ? modelOpts : type === "family" ? famOpts : type === "tag" ? tagOpts : []; }
-	function fmtItem(item) { if (item.type === "model") { const p = item.value.split("||"); return `${p[0]} / ${p[1]}`; } if (item.type === "family") return familyInfoMap[item.value]?.familyName || item.value; return item.value; }
+	function fmtItem(item) {
+		if (item.type === "model") {
+			const s = allSessions.find(x => x.penEntityId === item.value);
+			return s ? `${s.brand} / ${s.pen}` : item.value;
+		}
+		if (item.type === "family") {
+			const fid = familyEntityIdToFamilyId[item.value];
+			return familyInfoMap[fid]?.familyName || item.value;
+		}
+		if (item.type === "pen") return item.value.toUpperCase();
+		return item.value;
+	}
 
 	// Groups include transient _addType/_addValue for the add-item form
 	let groups = $state([]);
@@ -28,8 +56,9 @@
 	let hiddenLabels = $state(new Set());
 	let defaultsApplied = $state(false);
 
-	const SK = "compareGroups";
-	const SK_SAVED = "compareSavedViews"; // { [name]: groups[] }
+	// V2 keys for post-refactor data (old keys are ignored; users get a fresh slate).
+	const SK = "compareGroupsV2";
+	const SK_SAVED = "compareSavedViewsV2"; // { [name]: groups[] }
 	let savedViews = $state({}); // name -> groups[]
 
 	onMount(() => {
@@ -97,31 +126,33 @@
 	function importFlagged() {
 		const newGroups = [];
 
-		// Each flagged family → its own group
-		for (const familyId of getFlaggedFamilies()) {
+		// Each flagged family entity ID → its own group
+		for (const familyEntityId of getFlaggedFamilies()) {
+			const familyId = familyEntityIdToFamilyId[familyEntityId];
 			const info = familyInfoMap[familyId];
 			newGroups.push({
 				id: `g_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-				name: info?.familyName || familyId,
-				items: [{ type: "family", value: familyId }],
+				name: info?.familyName || familyEntityId,
+				items: [{ type: "family", value: familyEntityId }],
 				_addType: "model",
 				_addValue: "",
 			});
 		}
 
-		// Each flagged model → its own group
-		for (const key of getFlaggedModels()) {
-			const [brand, model] = key.split("||");
+		// Each flagged model (pen entity ID) → its own group
+		for (const penEntityId of getFlaggedModels()) {
+			const s = allSessions.find((x) => x.penEntityId === penEntityId);
+			const name = s ? `${s.brand} / ${s.pen}` : penEntityId;
 			newGroups.push({
 				id: `g_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-				name: `${brand} / ${model}`,
-				items: [{ type: "model", value: key }],
+				name,
+				items: [{ type: "model", value: penEntityId }],
 				_addType: "model",
 				_addValue: "",
 			});
 		}
 
-		// All flagged individual pens → single group
+		// All flagged individual pens (lowercase inventory IDs) → single group
 		const pens = [...getFlaggedPens()];
 		if (pens.length > 0) {
 			newGroups.push({
@@ -145,8 +176,8 @@
 			title: "Wacom One: Gen1 vs Gen2",
 			description: "Compare the two generations of Wacom One pens.",
 			groups: [
-				{ name: "Wacom One Gen1", items: [{ type: "family", value: "Wacom_OneGen1" }] },
-				{ name: "Wacom One Gen2", items: [{ type: "family", value: "Wacom_OneGen2" }] },
+				{ name: "Wacom One Gen1", items: [{ type: "family", value: "wacom.penfamily.wacom_onegen1" }] },
+				{ name: "Wacom One Gen2", items: [{ type: "family", value: "wacom.penfamily.wacom_onegen2" }] },
 			],
 		},
 		{
@@ -154,9 +185,9 @@
 			title: "Wacom KP generations",
 			description: "Trace the evolution of the Wacom KP pen series across three generations.",
 			groups: [
-				{ name: "KP GEN1", items: [{ type: "family", value: "Wacom_KPGEN1" }] },
-				{ name: "KP GEN2", items: [{ type: "family", value: "Wacom_KPGEN2" }] },
-				{ name: "KP GEN3", items: [{ type: "family", value: "Wacom_KPGEN3" }] },
+				{ name: "KP GEN1", items: [{ type: "family", value: "wacom.penfamily.wacom_kpgen1" }] },
+				{ name: "KP GEN2", items: [{ type: "family", value: "wacom.penfamily.wacom_kpgen2" }] },
+				{ name: "KP GEN3", items: [{ type: "family", value: "wacom.penfamily.wacom_kpgen3" }] },
 			],
 		},
 		{
@@ -165,12 +196,12 @@
 			description: "Compare pens using the UD-EMR standard (Wacom One, Samsung S Pen, etc.), one group per brand.",
 			groups: [
 				{ name: "Wacom (UD-EMR)", items: [
-					{ type: "model", value: "WACOM||CP-913" },
-					{ type: "model", value: "WACOM||CP-923" },
+					{ type: "model", value: "wacom.pen.cp913" },
+					{ type: "model", value: "wacom.pen.cp923" },
 				]},
 				{ name: "Samsung (UD-EMR)", items: [
-					{ type: "model", value: "SAMSUNG||SPEN" },
-					{ type: "model", value: "SAMSUNG||SPENCREATOR" },
+					{ type: "model", value: "samsung.pen.spen" },
+					{ type: "model", value: "samsung.pen.spencreator" },
 				]},
 			],
 		},
@@ -179,9 +210,9 @@
 			title: "Flagships: Wacom KP GEN2 vs Huion PW600 vs XP-Pen X3 Pro",
 			description: "Compare three top-tier pen series across Wacom, Huion, and XP-Pen.",
 			groups: [
-				{ name: "Wacom KP GEN2", items: [{ type: "family", value: "Wacom_KPGEN2" }] },
-				{ name: "Huion PW600 series", items: [{ type: "family", value: "Huion_PW600" }] },
-				{ name: "XP-Pen X3 Pro series", items: [{ type: "family", value: "XPPen_X3Pro" }] },
+				{ name: "Wacom KP GEN2", items: [{ type: "family", value: "wacom.penfamily.wacom_kpgen2" }] },
+				{ name: "Huion PW600 series", items: [{ type: "family", value: "huion.penfamily.huion_pw600" }] },
+				{ name: "XP-Pen X3 Pro series", items: [{ type: "family", value: "xppen.penfamily.xppen_x3pro" }] },
 			],
 		},
 		{
@@ -189,8 +220,8 @@
 			title: "XP-Pen X3 Pro series vs X3 Elite",
 			description: "Compare the X3 Pro family against the standalone X3 Elite model.",
 			groups: [
-				{ name: "X3 Pro series", items: [{ type: "family", value: "XPPen_X3Pro" }] },
-				{ name: "X3 Elite", items: [{ type: "model", value: "XPPEN||X3ELITE" }] },
+				{ name: "X3 Pro series", items: [{ type: "family", value: "xppen.penfamily.xppen_x3pro" }] },
+				{ name: "X3 Elite", items: [{ type: "model", value: "xppen.pen.x3elite" }] },
 			],
 		},
 		{
@@ -198,8 +229,8 @@
 			title: "Huion PW517 vs PW550 series",
 			description: "Compare the Huion PW517 model against the PW550 family.",
 			groups: [
-				{ name: "PW517", items: [{ type: "model", value: "HUION||PW517" }] },
-				{ name: "PW550 series", items: [{ type: "family", value: "Huion_PW550" }] },
+				{ name: "PW517", items: [{ type: "model", value: "huion.pen.pw517" }] },
+				{ name: "PW550 series", items: [{ type: "family", value: "huion.penfamily.huion_pw550" }] },
 			],
 		},
 		{
@@ -207,8 +238,8 @@
 			title: "Huion PW600 series vs PW550 series",
 			description: "Compare the two recent Huion pen series head-to-head.",
 			groups: [
-				{ name: "PW600 series", items: [{ type: "family", value: "Huion_PW600" }] },
-				{ name: "PW550 series", items: [{ type: "family", value: "Huion_PW550" }] },
+				{ name: "PW600 series", items: [{ type: "family", value: "huion.penfamily.huion_pw600" }] },
+				{ name: "PW550 series", items: [{ type: "family", value: "huion.penfamily.huion_pw550" }] },
 			],
 		},
 		{
@@ -217,10 +248,10 @@
 			description: "Compare Xencelabs V2 pens (3-Button V2 and Thin V2) against the XP-Pen X3 Pro family.",
 			groups: [
 				{ name: "Xencelabs V2 series", items: [
-					{ type: "model", value: "XENCELABS||3BUTTONV2" },
-					{ type: "model", value: "XENCELABS||THINV2" },
+					{ type: "model", value: "xencelabs.pen.3buttonv2" },
+					{ type: "model", value: "xencelabs.pen.thinv2" },
 				]},
-				{ name: "XP-Pen X3 Pro series", items: [{ type: "family", value: "XPPen_X3Pro" }] },
+				{ name: "XP-Pen X3 Pro series", items: [{ type: "family", value: "xppen.penfamily.xppen_x3pro" }] },
 			],
 		},
 	];
@@ -245,7 +276,7 @@
 		const r = [];
 		for (let i = 0; i < gSess.length; i++) {
 			const { g, ss } = gSess[i]; const c = COLORS[i % COLORS.length];
-			for (const s of ss) r.push({ label: `${g.name}: ${s.brand} / ${s.pen} / ${s.inventoryid} ${s.date}`, records: s.records, color: c, inventoryid: s.inventoryid, date: s.date, brand: s.brand, model: s.pen, penfamily: s.penfamily, defects: s.defects, isDefective: s.isDefective, _groupId: g.id, ...s.pValues });
+			for (const s of ss) r.push({ label: `${g.name}: ${s.brand} / ${s.pen} / ${s.inventoryid} ${s.date}`, records: s.records, color: c, inventoryid: s.inventoryid, date: s.date, brand: s.brand, model: s.pen, penEntityId: s.penEntityId, sessionId: s.sessionId, penfamily: s.penfamily, defects: s.defects, isDefective: s.isDefective, _groupId: g.id, ...s.pValues });
 		}
 		return r;
 	})());

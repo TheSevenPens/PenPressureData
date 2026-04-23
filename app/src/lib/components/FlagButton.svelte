@@ -8,22 +8,25 @@
 		isFamilyFlagged,
 	} from "$lib/flagged.svelte.js";
 
-	let { type, inventoryid = "", brand = "", model = "", familyId = "" } = $props();
+	// type === "pen"    → inventoryid prop (e.g. "WAP.0004", any case)
+	// type === "model"  → entityId prop    (e.g. "wacom.pen.kp504e")
+	// type === "family" → entityId prop    (e.g. "wacom.penfamily.wacom_kpgen2")
+	let { type, inventoryid = "", entityId = "" } = $props();
 
 	let flagged = $derived(
 		type === "pen"
 			? isPenFlagged(inventoryid)
 			: type === "family"
-				? isFamilyFlagged(familyId)
-				: isModelFlagged(brand, model),
+				? isFamilyFlagged(entityId)
+				: isModelFlagged(entityId),
 	);
 
 	function toggle(e) {
 		e.preventDefault();
 		e.stopPropagation();
 		if (type === "pen") togglePen(inventoryid);
-		else if (type === "family") toggleFamily(familyId);
-		else toggleModel(brand, model);
+		else if (type === "family") toggleFamily(entityId);
+		else toggleModel(entityId);
 	}
 </script>
 

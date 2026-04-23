@@ -1,67 +1,72 @@
 <script>
 	import { base } from "$app/paths";
-	import { allSessions, familyInfoMap, penFamilies } from "$lib/data.js";
+	import { allSessions, familyIdToEntityId } from "$lib/data.js";
 	import PressureChart from "$lib/components/PressureChart.svelte";
+	import BreadcrumbBar from "$lib/components/BreadcrumbBar.svelte";
 	import NavStrip from "$lib/components/NavStrip.svelte";
 	import ZoomSelect from "$lib/components/ZoomSelect.svelte";
 	import EstimatesSelect from "$lib/components/EstimatesSelect.svelte";
 	import ChartLegendTable from "$lib/components/ChartLegendTable.svelte";
 	import ModelStats from "$lib/components/ModelStats.svelte";
 	import FlagButton from "$lib/components/FlagButton.svelte";
+	import { fmtP } from "$lib/interpolate.js";
 
 	const COLORS = [
-		"#4a6fa5",
-		"#e94560",
-		"#2ecc71",
-		"#f39c12",
-		"#9b59b6",
-		"#1abc9c",
-		"#e74c3c",
-		"#3498db",
-		"#e67e22",
-		"#8e44ad",
+		"#4a6fa5", "#e94560", "#2ecc71", "#f39c12", "#9b59b6",
+		"#1abc9c", "#e74c3c", "#3498db", "#e67e22", "#8e44ad",
 	];
 
 	let { data } = $props();
 
-	let familyInfo = $derived(
-		familyInfoMap[data.familyId] || { familyId: data.familyId, familyName: data.familyId, brand: "" },
-	);
+	// --- Pen model navigation: iterate unique pen entity IDs with data ---
+	const allPenModels = (() => {
+		const seen = new Set();
+		const models = [];
+		for (const s of allSessions) {
+			if (!s.penEntityId || seen.has(s.penEntityId)) continue;
+			seen.add(s.penEntityId);
+			models.push({ entityId: s.penEntityId, brand: s.brand, model: s.pen });
+		}
+		return models;
+	})();
 
-	// --- Family navigation ---
-	let familyIndex = $derived(
-		penFamilies.findIndex((f) => f.familyId === data.familyId),
+	let modelIndex = $derived(
+		allPenModels.findIndex((m) => m.entityId === data.entityId),
 	);
-	let prevFamily = $derived(
-		familyIndex > 0 ? penFamilies[familyIndex - 1] : null,
-	);
-	let nextFamily = $derived(
-		familyIndex < penFamilies.length - 1 ? penFamilies[familyIndex + 1] : null,
+	let prevModel = $derived(modelIndex > 0 ? allPenModels[modelIndex - 1] : null);
+	let nextModel = $derived(
+		modelIndex >= 0 && modelIndex < allPenModels.length - 1
+			? allPenModels[modelIndex + 1]
+			: null,
 	);
 
 	// --- Page data ---
 	let sessions = $derived(
-		allSessions.filter((s) => s.penfamily === data.familyId),
+		allSessions.filter((s) => s.penEntityId === data.entityId),
 	);
+
+	// Breadcrumb context: any session for this pen has the brand/model
+	let firstSession = $derived(sessions[0] ?? null);
 
 	let allSeries = $derived(
 		(() => {
-			// Color by model
 			const colorMap = {};
 			let colorIndex = 0;
 			for (const s of sessions) {
-				if (!(s.pen in colorMap)) {
-					colorMap[s.pen] = COLORS[colorIndex++ % COLORS.length];
+				if (!(s.inventoryid in colorMap)) {
+					colorMap[s.inventoryid] = COLORS[colorIndex++ % COLORS.length];
 				}
 			}
 			return sessions.map((s) => ({
-				label: `${s.pen} / ${s.inventoryid} ${s.date}`,
+				label: `${s.inventoryid} ${s.date}`,
 				records: s.records,
-				color: colorMap[s.pen],
+				color: colorMap[s.inventoryid],
 				inventoryid: s.inventoryid,
 				date: s.date,
 				brand: s.brand,
 				model: s.pen,
+				penEntityId: s.penEntityId,
+				sessionId: s.sessionId,
 				defects: s.defects,
 				isDefective: s.isDefective,
 				...s.pValues,
@@ -76,7 +81,6 @@
 	let chartRef = $state(null);
 	let envelopeRange = $state("minmax");
 
-	// Hide defective sessions by default on chart (still listed in legend with ⚠)
 	$effect(() => {
 		if (defaultsApplied || allSeries.length === 0) return;
 		const defaultHidden = allSeries
@@ -102,59 +106,19 @@
 
 	function standardSampleRecords(s) {
 		return [
-			[s.p00, 0],
-			[s.p01, 1],
-			[s.p05, 5],
-			[s.p10, 10],
-			[s.p20, 20],
-			[s.p25, 25],
-			[s.p30, 30],
-			[s.p40, 40],
-			[s.p50, 50],
-			[s.p60, 60],
-			[s.p70, 70],
-			[s.p75, 75],
-			[s.p80, 80],
-			[s.p90, 90],
-			[s.p95, 95],
-			[s.p99, 99],
-			[s.p100, 100],
+			[s.p00, 0], [s.p01, 1], [s.p05, 5], [s.p10, 10], [s.p20, 20],
+			[s.p25, 25], [s.p30, 30], [s.p40, 40], [s.p50, 50], [s.p60, 60],
+			[s.p70, 70], [s.p75, 75], [s.p80, 80], [s.p90, 90], [s.p95, 95],
+			[s.p99, 99], [s.p100, 100],
 		].filter(([x]) => x != null);
 	}
-
-	// Envelope grouping by model
-	let groupByModel = $state(false);
-	let envelopeGroups = $derived(
-		(() => {
-			if (!groupByModel || showEstimates !== "envelope") return null;
-			const seen = new Map();
-			let colorIndex = 0;
-			for (const s of allSeries) {
-				const key = `${s.brand}||${s.model}`;
-				if (!seen.has(key)) {
-					seen.set(key, {
-						key,
-						field: "model",
-						label: s.model,
-						color: COLORS[colorIndex++ % COLORS.length],
-					});
-				}
-			}
-			return [...seen.values()];
-		})(),
-	);
 
 	let visibleSeries = $derived(
 		allSeries
 			.filter((s) => !hiddenLabels.has(s.label))
 			.map((s) => {
 				if (showEstimates === "standardized" || showEstimates === "envelope") {
-					return {
-						...s,
-						records: standardSampleRecords(s),
-						p00: null,
-						p100: null,
-					};
+					return { ...s, records: standardSampleRecords(s), p00: null, p100: null };
 				}
 				return {
 					...s,
@@ -165,29 +129,29 @@
 	);
 </script>
 
-{#if sessions.length > 0}
-	<div class="family-page">
+{#if sessions.length > 0 && firstSession}
+	<div class="model-page">
 		<div class="page-header">
-			<div class="family-title">
-				<h2>{familyInfo.brand} / {familyInfo.familyName}</h2>
-				<FlagButton type="family" familyId={data.familyId} />
-				<span class="detail-counts">
-					{new Set(sessions.map((s) => s.pen)).size} models
-					/ {new Set(sessions.map((s) => s.inventoryid)).size} pens
-					/ {sessions.length} {sessions.length === 1 ? "session" : "sessions"}
-				</span>
-			</div>
+			<BreadcrumbBar
+				brand={firstSession.brand}
+				model={firstSession.pen}
+				detail={[
+					`${new Set(sessions.map((s) => s.inventoryid)).size} pens`,
+					`${sessions.length} ${sessions.length === 1 ? "session" : "sessions"}`,
+				]}
+			/>
+			<FlagButton type="model" entityId={data.entityId} />
 			<NavStrip
-				index={familyIndex}
-				total={penFamilies.length}
-				prevHref={prevFamily
-					? `${base}/families/${encodeURIComponent(prevFamily.familyId)}`
+				index={modelIndex}
+				total={allPenModels.length}
+				prevHref={prevModel
+					? `${base}/penmodel/${encodeURIComponent(prevModel.entityId)}`
 					: null}
-				prevLabel={prevFamily ? prevFamily.familyName : ""}
-				nextHref={nextFamily
-					? `${base}/families/${encodeURIComponent(nextFamily.familyId)}`
+				prevLabel={prevModel ? `${prevModel.brand} / ${prevModel.model}` : ""}
+				nextHref={nextModel
+					? `${base}/penmodel/${encodeURIComponent(nextModel.entityId)}`
 					: null}
-				nextLabel={nextFamily ? nextFamily.familyName : ""}
+				nextLabel={nextModel ? `${nextModel.brand} / ${nextModel.model}` : ""}
 			/>
 		</div>
 
@@ -204,10 +168,6 @@
 						<option value="p05p95">Range: P05/P95</option>
 						<option value="p25p75">Range: P25/P75</option>
 					</select>
-					<label class="group-toggle">
-						<input type="checkbox" bind:checked={groupByModel} />
-						Group by model
-					</label>
 				{/if}
 				<select
 					class="export-select"
@@ -228,9 +188,8 @@
 				series={visibleSeries}
 				zoomMode={zoom}
 				envelopeMode={showEstimates === "envelope"}
-				{envelopeGroups}
 				{envelopeRange}
-				title="Pressure response for {familyInfo.familyName}"
+				title="Pressure response for {firstSession.brand} / {firstSession.pen}"
 			/>
 		</div>
 
@@ -238,20 +197,19 @@
 			series={allSeries}
 			{hiddenLabels}
 			{showEstimates}
-			showBrand={true}
 			showInventoryId={true}
 			onToggleSeries={toggleSeries}
 		/>
 	</div>
 {:else}
 	<div class="not-found">
-		<p>No sessions found for family <code>{data.familyId}</code>.</p>
-		<a href="{base}/families">← Back to pen families</a>
+		<p>No sessions found for pen model <code>{data.entityId}</code>.</p>
+		<a href="{base}/penmodels">← Back to pen models</a>
 	</div>
 {/if}
 
 <style>
-	.family-page {
+	.model-page {
 		max-width: 100%;
 	}
 
@@ -262,17 +220,9 @@
 		margin-bottom: 1.5rem;
 		gap: 1.5rem;
 	}
-
-	.family-title h2 {
-		font-size: 1.1rem;
-		font-weight: 600;
-		margin: 0;
-		color: #1a1a2e;
-	}
-
-	.detail-counts {
-		font-size: 0.85rem;
-		color: #666;
+	.page-header :global(.breadcrumb-bar) {
+		margin-bottom: 0;
+		flex: 1;
 	}
 
 	.chart-area {
@@ -307,16 +257,6 @@
 		border-radius: 4px;
 		padding: 0.2rem 0.4rem;
 		cursor: pointer;
-	}
-
-	.group-toggle {
-		font-size: 0.8rem;
-		color: #444;
-		display: flex;
-		align-items: center;
-		gap: 0.3rem;
-		cursor: pointer;
-		white-space: nowrap;
 	}
 
 	.export-select {

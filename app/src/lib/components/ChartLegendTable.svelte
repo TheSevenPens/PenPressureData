@@ -114,39 +114,18 @@
                 {#if showBrand}
                     <td>{s.brand}</td>
                     <td>
-                        <a
-                            href="{base}/details/{encodeURIComponent(
-                                s.brand,
-                            )}/{encodeURIComponent(s.model)}"
-                            >{s.model}</a
-                        >
+                        <a href="{base}/penmodel/{encodeURIComponent(s.penEntityId || '')}">{s.model}</a>
                     </td>
                     <td class="mono">
-                        <a
-                            href="{base}/details/{encodeURIComponent(
-                                s.brand,
-                            )}/{encodeURIComponent(s.model)}/{s.inventoryid}"
-                            >{s.inventoryid}</a
-                        >
+                        <a href="{base}/inventorypen/{encodeURIComponent((s.inventoryid || '').toLowerCase())}">{s.inventoryid}</a>
                     </td>
                 {:else if showInventoryId}
                     <td class="mono">
-                        <a
-                            href="{base}/details/{encodeURIComponent(
-                                brand,
-                            )}/{encodeURIComponent(model)}/{s.inventoryid}"
-                            >{s.inventoryid}</a
-                        >
+                        <a href="{base}/inventorypen/{encodeURIComponent((s.inventoryid || '').toLowerCase())}">{s.inventoryid}</a>
                     </td>
                 {/if}
                 <td class="mono">
-                    <a
-                        href="{base}/details/{encodeURIComponent(
-                            showBrand ? s.brand : brand,
-                        )}/{encodeURIComponent(showBrand ? s.model : model)}/{showInventoryId || showBrand
-                            ? s.inventoryid
-                            : s.label.split(' ')[0]}/{s.date}">{s.date}</a
-                    >
+                    <a href="{base}/session/{encodeURIComponent((s.sessionId || `${s.inventoryid}_${s.date}`).toLowerCase())}">{s.date}</a>
                 </td>
                 {#if showEstimates !== "raw"}<td class="mono right"
                         >{fmtP(s.p00)}</td

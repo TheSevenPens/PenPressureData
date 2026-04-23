@@ -18,6 +18,12 @@ const penFamilyModules = import.meta.glob(
 	{ eager: true }
 );
 
+// Load tablet definition files (used for resolving TabletEntityId → human-readable name)
+const tabletModules = import.meta.glob(
+	'../../../data-repo/data/tablets/*-tablets.json',
+	{ eager: true }
+);
+
 // Load inventory files to look up Defects by InventoryId
 const inventoryModules = import.meta.glob(
 	'../../../data-repo/data/inventory/*-pens.json',
@@ -45,11 +51,12 @@ function parseTags(tags) {
 		.filter(Boolean);
 }
 
-// Build pen entity → family, tags, and PenId lookups from pen definition files
+// Build pen entity → family, tags, PenId, and PenName lookups from pen definition files
 function buildPenLookups() {
 	const penEntityToFamily = {};
 	const penEntityToTags = {};
 	const penEntityToPenId = {};
+	const penEntityToPenName = {};
 	for (const [, module] of Object.entries(penModules)) {
 		const data = module.default ?? module;
 		const pens = data.Pens ?? [];
@@ -63,10 +70,18 @@ function buildPenLookups() {
 			if (pen.EntityId && pen.PenId) {
 				penEntityToPenId[pen.EntityId] = pen.PenId;
 			}
+			if (pen.EntityId && pen.PenName) {
+				penEntityToPenName[pen.EntityId] = pen.PenName;
+			}
 		}
 	}
 
 	const familyInfoMap = {};
+	// Entity ID <-> FamilyId bidirectional lookup for URL routing.
+	// EntityIds in DrawTabData are lowercase (e.g. "wacom.penfamily.wacom_kpgen2").
+	// FamilyIds are mixed-case (e.g. "Wacom_KPGEN2") and are what session.penfamily stores.
+	const familyEntityIdToFamilyId = {};
+	const familyIdToEntityId = {};
 	for (const [, module] of Object.entries(penFamilyModules)) {
 		const data = module.default ?? module;
 		const families = data.PenFamilies ?? [];
@@ -75,14 +90,27 @@ function buildPenLookups() {
 				familyId: fam.FamilyId,
 				familyName: fam.FamilyName,
 				brand: fam.Brand,
+				entityId: fam.EntityId,
 			};
+			if (fam.EntityId && fam.FamilyId) {
+				familyEntityIdToFamilyId[fam.EntityId] = fam.FamilyId;
+				familyIdToEntityId[fam.FamilyId] = fam.EntityId;
+			}
 		}
 	}
 
-	return { penEntityToFamily, penEntityToTags, penEntityToPenId, familyInfoMap };
+	return { penEntityToFamily, penEntityToTags, penEntityToPenId, penEntityToPenName, familyInfoMap, familyEntityIdToFamilyId, familyIdToEntityId };
 }
 
-const { penEntityToFamily, penEntityToTags, penEntityToPenId, familyInfoMap } = buildPenLookups();
+const {
+	penEntityToFamily,
+	penEntityToTags,
+	penEntityToPenId,
+	penEntityToPenName,
+	familyInfoMap,
+	familyEntityIdToFamilyId,
+	familyIdToEntityId,
+} = buildPenLookups();
 
 // Build inventory defects lookup: InventoryId → Defects[]
 function buildDefectsLookup() {
@@ -115,6 +143,52 @@ function buildDefectsLookup() {
 
 const { inventoryIdToDefects, defectKindInfo } = buildDefectsLookup();
 
+// Brand code → human display name. Mirrors DrawTabDataExplorer's BRAND_NAMES
+// so the two projects format pen / tablet names identically.
+export const BRAND_NAMES = {
+	APPLE: "Apple", ASUS: "Asus", DIGIDRAW: "DIGIDRAW", GAOMON: "Gaomon", HUION: "Huion",
+	SAMSUNG: "Samsung", STAEDTLER: "Staedtler", UGEE: "Ugee", VEIKK: "Veikk",
+	WACOM: "Wacom", XENCELABS: "Xencelabs", XPPEN: "XP-Pen",
+};
+
+export function brandName(id) {
+	return BRAND_NAMES[id] ?? id;
+}
+
+// Formatted full pen name, matching DrawTabDataExplorer's FullName rule:
+//   "Wacom SP-200"            when PenName === PenId
+//   "Samsung S Pen (SPEN)"    otherwise
+export function fullPenName({ brand, penId, penName }) {
+	const b = brandName(brand);
+	if (!penName || penName === penId) return `${b} ${penId}`;
+	return `${b} ${penName} (${penId})`;
+}
+
+// Build tablet EntityId → FullName lookup ("Wacom Wacom One 2023 S (CTC-4110WL)").
+// Matches DrawTabDataExplorer's computed tablet FullName.
+function buildTabletLookup() {
+	const tabletEntityIdToFullName = {};
+	for (const [, module] of Object.entries(tabletModules)) {
+		const data = module.default ?? module;
+		const tablets = data.DrawingTablets ?? [];
+		for (const t of tablets) {
+			const entityId = t?.Meta?.EntityId;
+			const brand = t?.Model?.Brand;
+			const name = t?.Model?.Name;
+			const id = t?.Model?.Id;
+			if (!entityId) continue;
+			const brandPart = brandName(brand || '');
+			const nameAndId = name && id ? `${name} (${id})` : (name || id || '');
+			tabletEntityIdToFullName[entityId] = [brandPart, nameAndId]
+				.filter(Boolean)
+				.join(' ');
+		}
+	}
+	return { tabletEntityIdToFullName };
+}
+
+const { tabletEntityIdToFullName } = buildTabletLookup();
+
 function buildData() {
 	const allSessions = [];
 
@@ -135,17 +209,24 @@ function buildData() {
 			// to the trailing segment of PenEntityId (which is lowercase post-refactor).
 			const penId = (raw.PenEntityId && penEntityToPenId[raw.PenEntityId])
 				|| (raw.PenEntityId ? raw.PenEntityId.split('.').pop() : '');
+			const penName = (raw.PenEntityId && penEntityToPenName[raw.PenEntityId]) || penId;
+			const fullName = fullPenName({ brand: raw.Brand, penId, penName });
 
 			// Map DrawTabData field names to the format the app expects
+			const tabletEntityId = raw.TabletEntityId || '';
+			const tabletFullName = tabletEntityIdToFullName[tabletEntityId] || tabletEntityId;
 			const mapped = {
 				brand: raw.Brand,
 				pen: penId,
+				penName,
+				fullName,
 				penEntityId: raw.PenEntityId || '',
 				penfamily: familyId,
 				inventoryid: raw.InventoryId,
 				date: raw.Date,
 				user: raw.User || '',
-				tablet: raw.TabletEntityId || '',
+				tablet: tabletEntityId,
+				tabletFullName,
 				driver: raw.Driver || '',
 				os: raw.OS || '',
 				notes: raw.Notes || '',
@@ -235,7 +316,14 @@ function buildData() {
 
 export const { allSessions, byBrand, sessionById } = buildData();
 export const brands = Object.keys(byBrand).sort();
-export { familyInfoMap, penEntityToTags, inventoryIdToDefects, defectKindInfo };
+export {
+	familyInfoMap,
+	familyEntityIdToFamilyId,
+	familyIdToEntityId,
+	penEntityToTags,
+	inventoryIdToDefects,
+	defectKindInfo,
+};
 
 // Collect all unique tags from both pen definitions and session data
 export const allKnownTags = (() => {

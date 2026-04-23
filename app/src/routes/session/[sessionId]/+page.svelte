@@ -1,4 +1,4 @@
-﻿<script>
+<script>
 	import { base } from "$app/paths";
 	import { allSessions } from "$lib/data.js";
 	import PressureChart from "$lib/components/PressureChart.svelte";
@@ -11,11 +11,7 @@
 	import { fmtP } from "$lib/interpolate.js";
 
 	let { data } = $props();
-	let session = $derived(
-		allSessions.find(
-			(s) => s.inventoryid === data.inventoryid && s.date === data.date,
-		),
-	);
+	let session = $derived(allSessions.find((s) => s.sessionId === data.sessionId));
 
 	const COLOR = "#4a6fa5";
 
@@ -40,37 +36,22 @@
 
 	function standardSampleRecords(s) {
 		return [
-			[s.p00, 0],
-			[s.p01, 1],
-			[s.p05, 5],
-			[s.p10, 10],
-			[s.p20, 20],
-			[s.p25, 25],
-			[s.p30, 30],
-			[s.p40, 40],
-			[s.p50, 50],
-			[s.p60, 60],
-			[s.p70, 70],
-			[s.p75, 75],
-			[s.p80, 80],
-			[s.p90, 90],
-			[s.p95, 95],
-			[s.p99, 99],
-			[s.p100, 100],
+			[s.p00, 0], [s.p01, 1], [s.p05, 5], [s.p10, 10], [s.p20, 20],
+			[s.p25, 25], [s.p30, 30], [s.p40, 40], [s.p50, 50], [s.p60, 60],
+			[s.p70, 70], [s.p75, 75], [s.p80, 80], [s.p90, 90], [s.p95, 95],
+			[s.p99, 99], [s.p100, 100],
 		].filter(([x]) => x != null);
 	}
 
 	// --- Session navigation ---
 	let sessionIndex = $derived(
-		allSessions.findIndex(
-			(s) => s.inventoryid === data.inventoryid && s.date === data.date,
-		),
+		allSessions.findIndex((s) => s.sessionId === data.sessionId),
 	);
 	let prevSession = $derived(
 		sessionIndex > 0 ? allSessions[sessionIndex - 1] : null,
 	);
 	let nextSession = $derived(
-		sessionIndex < allSessions.length - 1
+		sessionIndex >= 0 && sessionIndex < allSessions.length - 1
 			? allSessions[sessionIndex + 1]
 			: null,
 	);
@@ -84,6 +65,10 @@
 						color: COLOR,
 						inventoryid: session.inventoryid,
 						date: session.date,
+						brand: session.brand,
+						model: session.pen,
+						penEntityId: session.penEntityId,
+						sessionId: session.sessionId,
 						defects: session.defects,
 						isDefective: session.isDefective,
 						...session.pValues,
@@ -97,12 +82,7 @@
 			.filter((s) => !hiddenLabels.has(s.label))
 			.map((s) => {
 				if (showEstimates === "standardized" || showEstimates === "envelope") {
-					return {
-						...s,
-						records: standardSampleRecords(s),
-						p00: null,
-						p100: null,
-					};
+					return { ...s, records: standardSampleRecords(s), p00: null, p100: null };
 				}
 				return {
 					...s,
@@ -122,9 +102,7 @@
 				detail={[
 					session.inventoryid,
 					session.date,
-					...(session.tags?.length
-						? [`tags: ${session.tags.join(", ")}`]
-						: []),
+					...(session.tags?.length ? [`tags: ${session.tags.join(", ")}`] : []),
 					...(session.notes ? [session.notes] : []),
 				]}
 			/>
@@ -132,17 +110,13 @@
 				index={sessionIndex}
 				total={allSessions.length}
 				prevHref={prevSession
-					? `${base}/details/${encodeURIComponent(prevSession.brand)}/${encodeURIComponent(prevSession.pen)}/${prevSession.inventoryid}/${prevSession.date}`
+					? `${base}/session/${encodeURIComponent(prevSession.sessionId.toLowerCase())}`
 					: null}
-				prevLabel={prevSession
-					? `${prevSession.inventoryid} · ${prevSession.date}`
-					: ""}
+				prevLabel={prevSession ? `${prevSession.inventoryid} · ${prevSession.date}` : ""}
 				nextHref={nextSession
-					? `${base}/details/${encodeURIComponent(nextSession.brand)}/${encodeURIComponent(nextSession.pen)}/${nextSession.inventoryid}/${nextSession.date}`
+					? `${base}/session/${encodeURIComponent(nextSession.sessionId.toLowerCase())}`
 					: null}
-				nextLabel={nextSession
-					? `${nextSession.inventoryid} · ${nextSession.date}`
-					: ""}
+				nextLabel={nextSession ? `${nextSession.inventoryid} · ${nextSession.date}` : ""}
 			/>
 		</div>
 
@@ -172,12 +146,8 @@
 		<div class="body-layout">
 			<div class="records-section">
 				<h2>Data</h2>
-				<RecordsTable
-					records={session.records}
-					pValues={session.pValues}
-				/>
+				<RecordsTable records={session.records} pValues={session.pValues} />
 			</div>
-
 			<div class="chart-section">
 				<div class="chart-header">
 					<h2>Pressure Response</h2>
@@ -204,7 +174,6 @@
 					envelopeMode={showEstimates === "envelope"}
 					title="Pressure response for {session.brand} / {session.pen} / {session.inventoryid} / {session.date}"
 				/>
-
 				<div class="legend-container">
 					<ChartLegendTable
 						series={chartSeries}
@@ -221,120 +190,46 @@
 	</div>
 {:else}
 	<div class="not-found">
-		<p>Session <code>{data.inventoryid} {data.date}</code> not found.</p>
+		<p>Session <code>{data.sessionId}</code> not found.</p>
 		<a href="{base}/">← Back to sessions</a>
 	</div>
 {/if}
 
 <style>
-	.session-page {
-		max-width: 100%;
-	}
+	.session-page { max-width: 100%; }
 
 	.page-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 1.5rem;
-		gap: 1.5rem;
+		display: flex; align-items: center; justify-content: space-between;
+		margin-bottom: 1.5rem; gap: 1.5rem;
 	}
-	.page-header :global(.breadcrumb-bar) {
-		margin-bottom: 0;
-		flex: 1;
-	}
+	.page-header :global(.breadcrumb-bar) { margin-bottom: 0; flex: 1; }
 
 	.meta-grid {
-		display: flex;
-		gap: 1.5rem;
-		flex-wrap: wrap;
-		padding: 0.875rem 1rem;
-		background: #f8f8f8;
-		border-radius: 6px;
-		border: 1px solid #eee;
-		margin-bottom: 1.5rem;
+		display: flex; gap: 1.5rem; flex-wrap: wrap;
+		padding: 0.875rem 1rem; background: #f8f8f8;
+		border-radius: 6px; border: 1px solid #eee; margin-bottom: 1.5rem;
 	}
+	.meta-item { display: flex; flex-direction: column; gap: 0.15rem; }
+	.meta-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #999; }
+	.meta-value { font-size: 0.875rem; color: #333; }
+	.meta-value-tags { max-width: 26rem; word-break: break-word; }
 
-	.meta-item {
-		display: flex;
-		flex-direction: column;
-		gap: 0.15rem;
+	.body-layout { display: grid; grid-template-columns: auto 1fr; gap: 2rem; align-items: start; }
+
+	.chart-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem; }
+	.records-section h2, .chart-header h2 {
+		font-size: 0.9rem; font-weight: 600; text-transform: uppercase;
+		letter-spacing: 0.5px; color: #888; margin: 0;
 	}
-
-	.meta-label {
-		font-size: 0.7rem;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-		color: #999;
-	}
-
-	.meta-value {
-		font-size: 0.875rem;
-		color: #333;
-	}
-
-	.meta-value-tags {
-		max-width: 26rem;
-		word-break: break-word;
-	}
-
-	.body-layout {
-		display: grid;
-		grid-template-columns: auto 1fr;
-		gap: 2rem;
-		align-items: start;
-	}
-
-	.chart-header {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-		margin-bottom: 0.75rem;
-	}
-
-	.records-section h2,
-	.chart-header h2 {
-		font-size: 0.9rem;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-		color: #888;
-		margin: 0;
-	}
-
 	.export-select {
-		font-size: 0.8rem;
-		color: #444;
-		border: 1px solid #ccc;
-		border-radius: 4px;
-		padding: 0.2rem 0.4rem;
-		cursor: pointer;
-		margin-left: auto;
+		font-size: 0.8rem; color: #444; border: 1px solid #ccc;
+		border-radius: 4px; padding: 0.2rem 0.4rem; cursor: pointer; margin-left: auto;
 	}
 
-	.chart-section {
-		min-width: 0;
-		display: flex;
-		flex-direction: column;
-	}
+	.chart-section { min-width: 0; display: flex; flex-direction: column; }
+	.chart-section :global(.chart-wrap) { height: 480px; margin-bottom: 1.5rem; }
+	.legend-container { width: 100%; overflow-x: auto; }
 
-	.chart-section :global(.chart-wrap) {
-		height: 480px;
-		margin-bottom: 1.5rem;
-	}
-
-	.legend-container {
-		width: 100%;
-		overflow-x: auto;
-	}
-
-	.not-found {
-		color: #666;
-	}
-
-	.not-found code {
-		background: #f0f0f0;
-		padding: 0.1rem 0.4rem;
-		border-radius: 3px;
-	}
+	.not-found { color: #666; }
+	.not-found code { background: #f0f0f0; padding: 0.1rem 0.4rem; border-radius: 3px; }
 </style>

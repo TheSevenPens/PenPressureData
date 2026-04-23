@@ -1,4 +1,4 @@
-﻿<script>
+<script>
 	import { base } from "$app/paths";
 	import { allSessions } from "$lib/data.js";
 	import PressureChart from "$lib/components/PressureChart.svelte";
@@ -7,87 +7,76 @@
 	import ZoomSelect from "$lib/components/ZoomSelect.svelte";
 	import EstimatesSelect from "$lib/components/EstimatesSelect.svelte";
 	import ChartLegendTable from "$lib/components/ChartLegendTable.svelte";
-	import ModelStats from "$lib/components/ModelStats.svelte";
-	import { fmtP } from "$lib/interpolate.js";
 	import FlagButton from "$lib/components/FlagButton.svelte";
+	import { fmtP } from "$lib/interpolate.js";
 
 	const COLORS = [
-		"#4a6fa5",
-		"#e94560",
-		"#2ecc71",
-		"#f39c12",
-		"#9b59b6",
-		"#1abc9c",
-		"#e74c3c",
-		"#3498db",
-		"#e67e22",
-		"#8e44ad",
+		"#4a6fa5", "#e94560", "#2ecc71", "#f39c12", "#9b59b6",
+		"#1abc9c", "#e74c3c", "#3498db", "#e67e22", "#8e44ad",
 	];
 
 	let { data } = $props();
 
-	// --- Model navigation ---
-	const allModels = (() => {
+	// All unique inventory IDs with data, in sort order (for prev/next)
+	const allPens = (() => {
 		const seen = new Set();
-		const models = [];
+		const pens = [];
 		for (const s of allSessions) {
-			const key = `${s.brand}|||${s.pen}`;
-			if (!seen.has(key)) {
-				seen.add(key);
-				models.push({ brand: s.brand, model: s.pen });
+			if (!seen.has(s.inventoryid)) {
+				seen.add(s.inventoryid);
+				pens.push({
+					inventoryid: s.inventoryid,
+					brand: s.brand,
+					pen: s.pen,
+					penEntityId: s.penEntityId,
+				});
 			}
 		}
-		return models;
+		return pens;
 	})();
 
-	let modelIndex = $derived(
-		allModels.findIndex(
-			(m) => m.brand === data.brand && m.model === data.model,
-		),
+	let penIndex = $derived(
+		allPens.findIndex((p) => p.inventoryid === data.inventoryId),
 	);
-	let prevModel = $derived(modelIndex > 0 ? allModels[modelIndex - 1] : null);
-	let nextModel = $derived(
-		modelIndex < allModels.length - 1 ? allModels[modelIndex + 1] : null,
+	let prevPen = $derived(penIndex > 0 ? allPens[penIndex - 1] : null);
+	let nextPen = $derived(
+		penIndex >= 0 && penIndex < allPens.length - 1
+			? allPens[penIndex + 1]
+			: null,
 	);
 
 	// --- Page data ---
 	let sessions = $derived(
-		allSessions.filter(
-			(s) => s.brand === data.brand && s.pen === data.model,
-		),
+		allSessions.filter((s) => s.inventoryid === data.inventoryId),
 	);
 
+	let pen = $derived(sessions[0] ?? null);
+
 	let allSeries = $derived(
-		(() => {
-			const colorMap = {};
-			let colorIndex = 0;
-			for (const s of sessions) {
-				if (!(s.inventoryid in colorMap)) {
-					colorMap[s.inventoryid] =
-						COLORS[colorIndex++ % COLORS.length];
-				}
-			}
-			return sessions.map((s) => ({
-				label: `${s.inventoryid} ${s.date}`,
-				records: s.records,
-				color: colorMap[s.inventoryid],
-				inventoryid: s.inventoryid,
-				date: s.date,
-				defects: s.defects,
-				isDefective: s.isDefective,
-				...s.pValues,
-			}));
-		})(),
+		sessions.map((s, i) => ({
+			label: s.date,
+			records: s.records,
+			color: COLORS[i % COLORS.length],
+			inventoryid: s.inventoryid,
+			date: s.date,
+			brand: s.brand,
+			model: s.pen,
+			penEntityId: s.penEntityId,
+			sessionId: s.sessionId,
+			defects: s.defects,
+			isDefective: s.isDefective,
+			...s.pValues,
+		})),
 	);
+
+	let penDefects = $derived(pen?.defects || []);
 
 	let hiddenLabels = $state(new Set());
 	let defaultsApplied = $state(false);
 	let showEstimates = $state("estimates");
 	let zoom = $state("normal");
 	let chartRef = $state(null);
-	let envelopeRange = $state("minmax");
 
-	// Hide defective sessions by default on chart (still listed in legend with ⚠)
 	$effect(() => {
 		if (defaultsApplied || allSeries.length === 0) return;
 		const defaultHidden = allSeries
@@ -113,23 +102,10 @@
 
 	function standardSampleRecords(s) {
 		return [
-			[s.p00, 0],
-			[s.p01, 1],
-			[s.p05, 5],
-			[s.p10, 10],
-			[s.p20, 20],
-			[s.p25, 25],
-			[s.p30, 30],
-			[s.p40, 40],
-			[s.p50, 50],
-			[s.p60, 60],
-			[s.p70, 70],
-			[s.p75, 75],
-			[s.p80, 80],
-			[s.p90, 90],
-			[s.p95, 95],
-			[s.p99, 99],
-			[s.p100, 100],
+			[s.p00, 0], [s.p01, 1], [s.p05, 5], [s.p10, 10], [s.p20, 20],
+			[s.p25, 25], [s.p30, 30], [s.p40, 40], [s.p50, 50], [s.p60, 60],
+			[s.p70, 70], [s.p75, 75], [s.p80, 80], [s.p90, 90], [s.p95, 95],
+			[s.p99, 99], [s.p100, 100],
 		].filter(([x]) => x != null);
 	}
 
@@ -138,12 +114,7 @@
 			.filter((s) => !hiddenLabels.has(s.label))
 			.map((s) => {
 				if (showEstimates === "standardized" || showEstimates === "envelope") {
-					return {
-						...s,
-						records: standardSampleRecords(s),
-						p00: null,
-						p100: null,
-					};
+					return { ...s, records: standardSampleRecords(s), p00: null, p100: null };
 				}
 				return {
 					...s,
@@ -154,50 +125,49 @@
 	);
 </script>
 
-{#if sessions.length > 0}
-	<div class="model-page">
+{#if pen}
+	<div class="pen-page">
 		<div class="page-header">
 			<BreadcrumbBar
-				brand={data.brand}
-				model={data.model}
+				brand={pen.brand}
+				model={pen.pen}
 				detail={[
-					`${new Set(sessions.map((s) => s.inventoryid)).size} pens`,
+					pen.inventoryid,
 					`${sessions.length} ${sessions.length === 1 ? "session" : "sessions"}`,
 				]}
 			/>
-			<FlagButton type="model" brand={data.brand} model={data.model} />
+			<FlagButton type="pen" inventoryid={pen.inventoryid} />
 			<NavStrip
-				index={modelIndex}
-				total={allModels.length}
-				prevHref={prevModel
-					? `${base}/details/${encodeURIComponent(prevModel.brand)}/${encodeURIComponent(prevModel.model)}`
+				index={penIndex}
+				total={allPens.length}
+				prevHref={prevPen
+					? `${base}/inventorypen/${encodeURIComponent(prevPen.inventoryid.toLowerCase())}`
 					: null}
-				prevLabel={prevModel
-					? `${prevModel.brand} / ${prevModel.model}`
-					: ""}
-				nextHref={nextModel
-					? `${base}/details/${encodeURIComponent(nextModel.brand)}/${encodeURIComponent(nextModel.model)}`
+				prevLabel={prevPen ? prevPen.inventoryid : ""}
+				nextHref={nextPen
+					? `${base}/inventorypen/${encodeURIComponent(nextPen.inventoryid.toLowerCase())}`
 					: null}
-				nextLabel={nextModel
-					? `${nextModel.brand} / ${nextModel.model}`
-					: ""}
+				nextLabel={nextPen ? nextPen.inventoryid : ""}
 			/>
 		</div>
 
-		<ModelStats {sessions} />
+		{#if penDefects.length > 0}
+			<div class="defect-banner">
+				<span class="warn-icon">&#9888;</span>
+				<strong>Defective pen.</strong>
+				{#each penDefects as d, i}
+					<span class="defect-item">
+						<span class="defect-kind">{d.Kind}</span>{#if d.Notes} — {d.Notes}{/if}
+					</span>{#if i < penDefects.length - 1}; {/if}
+				{/each}
+			</div>
+		{/if}
 
 		<div class="chart-area">
 			<div class="chart-header">
 				<h2>Pressure Response</h2>
 				<ZoomSelect bind:value={zoom} />
 				<EstimatesSelect bind:value={showEstimates} />
-				{#if showEstimates === "envelope"}
-					<select class="range-select" bind:value={envelopeRange}>
-						<option value="minmax">Range: Min/Max</option>
-						<option value="p05p95">Range: P05/P95</option>
-						<option value="p25p75">Range: P25/P75</option>
-					</select>
-				{/if}
 				<select
 					class="export-select"
 					onchange={(e) => {
@@ -217,30 +187,31 @@
 				series={visibleSeries}
 				zoomMode={zoom}
 				envelopeMode={showEstimates === "envelope"}
-				{envelopeRange}
-				title="Pressure response for {data.brand} / {data.model}"
+				title="Pressure response for {pen.brand} / {pen.pen} / {pen.inventoryid}"
 			/>
 		</div>
 
-		<ChartLegendTable
-			series={allSeries}
-			{hiddenLabels}
-			{showEstimates}
-			brand={data.brand}
-			model={data.model}
-			showInventoryId={true}
-			onToggleSeries={toggleSeries}
-		/>
+		{#if allSeries.length > 1}
+			<ChartLegendTable
+				series={allSeries}
+				{hiddenLabels}
+				{showEstimates}
+				brand={pen.brand}
+				model={pen.pen}
+				showInventoryId={false}
+				onToggleSeries={toggleSeries}
+			/>
+		{/if}
 	</div>
 {:else}
 	<div class="not-found">
-		<p>No sessions found for <code>{data.brand} {data.model}</code>.</p>
-		<a href="{base}/models">← Back to pen models</a>
+		<p>No sessions found for inventory pen <code>{data.inventoryId}</code>.</p>
+		<a href="{base}/pens">← Back to pens</a>
 	</div>
 {/if}
 
 <style>
-	.model-page {
+	.pen-page {
 		max-width: 100%;
 	}
 
@@ -254,6 +225,24 @@
 	.page-header :global(.breadcrumb-bar) {
 		margin-bottom: 0;
 		flex: 1;
+	}
+
+	.defect-banner {
+		background: #fff3cd;
+		border: 1px solid #ffc107;
+		border-radius: 4px;
+		padding: 0.6rem 0.9rem;
+		font-size: 0.85rem;
+		color: #856404;
+		margin-bottom: 1.5rem;
+	}
+	.warn-icon {
+		margin-right: 0.4rem;
+		font-size: 1rem;
+	}
+	.defect-kind {
+		font-family: monospace;
+		font-weight: 600;
 	}
 
 	.chart-area {
@@ -279,15 +268,6 @@
 		letter-spacing: 0.5px;
 		color: #888;
 		margin: 0;
-	}
-
-	.range-select {
-		font-size: 0.8rem;
-		color: #444;
-		border: 1px solid #ccc;
-		border-radius: 4px;
-		padding: 0.2rem 0.4rem;
-		cursor: pointer;
 	}
 
 	.export-select {

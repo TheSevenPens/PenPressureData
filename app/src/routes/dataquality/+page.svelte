@@ -24,14 +24,14 @@
 	];
 	let activeTab = $state("recommended");
 
-	function modelHref(brand, model) {
-		return `${base}/details/${encodeURIComponent(brand)}/${encodeURIComponent(model)}`;
+	function modelHref(penEntityId) {
+		return `${base}/penmodel/${encodeURIComponent(penEntityId)}`;
 	}
-	function penHref(brand, model, inventoryid) {
-		return `${base}/details/${encodeURIComponent(brand)}/${encodeURIComponent(model)}/${inventoryid}`;
+	function penHref(inventoryid) {
+		return `${base}/inventorypen/${encodeURIComponent(inventoryid.toLowerCase())}`;
 	}
-	function sessionHref(brand, model, inventoryid, date) {
-		return `${base}/details/${encodeURIComponent(brand)}/${encodeURIComponent(model)}/${inventoryid}/${date}`;
+	function sessionHref(inventoryid, date) {
+		return `${base}/session/${encodeURIComponent(`${inventoryid}_${date}`.toLowerCase())}`;
 	}
 </script>
 
@@ -79,8 +79,8 @@
 					{#each recommended as r}
 						<tr>
 							<td>{r.brand}</td>
-							<td><a href={modelHref(r.brand, r.model)}>{r.model}</a></td>
-							<td class="mono"><a href={penHref(r.brand, r.model, r.inventoryid)}>{r.inventoryid}</a></td>
+							<td><a href={modelHref(r.penEntityId)}>{r.model}</a></td>
+							<td class="mono"><a href={penHref(r.inventoryid)}>{r.inventoryid}</a></td>
 							<td>
 								{#each r.reasons as reason, i}
 									<span class="reason">{reason}</span>{#if i < r.reasons.length - 1}, {/if}
@@ -120,9 +120,9 @@
 					{#each nonMonotonic as s}
 						<tr>
 							<td>{s.brand}</td>
-							<td><a href={modelHref(s.brand, s.pen)}>{s.pen}</a></td>
-							<td class="mono"><a href={penHref(s.brand, s.pen, s.inventoryid)}>{s.inventoryid}</a></td>
-							<td class="mono"><a href={sessionHref(s.brand, s.pen, s.inventoryid, s.date)}>{s.date}</a></td>
+							<td><a href={modelHref(s.penEntityId)}>{s.pen}</a></td>
+							<td class="mono"><a href={penHref(s.inventoryid)}>{s.inventoryid}</a></td>
+							<td class="mono"><a href={sessionHref(s.inventoryid, s.date)}>{s.date}</a></td>
 							<td class="mono">{s.firstDrop.from.toFixed(2)}% → {s.firstDrop.to.toFixed(2)}%</td>
 						</tr>
 					{/each}
@@ -158,8 +158,8 @@
 					{#each missingLowEnd as p}
 						<tr>
 							<td>{p.brand}</td>
-							<td><a href={modelHref(p.brand, p.model)}>{p.model}</a></td>
-							<td class="mono"><a href={penHref(p.brand, p.model, p.inventoryid)}>{p.inventoryid}</a></td>
+							<td><a href={modelHref(p.penEntityId)}>{p.model}</a></td>
+							<td class="mono"><a href={penHref(p.inventoryid)}>{p.inventoryid}</a></td>
 							<td class="num mono">{p.lowestLogical.toFixed(2)}</td>
 							<td class="num mono">{p.sessionCount}</td>
 						</tr>
@@ -194,9 +194,9 @@
 					{#each singleSession as p}
 						<tr>
 							<td>{p.brand}</td>
-							<td><a href={modelHref(p.brand, p.model)}>{p.model}</a></td>
-							<td class="mono"><a href={penHref(p.brand, p.model, p.inventoryid)}>{p.inventoryid}</a></td>
-							<td class="mono"><a href={sessionHref(p.brand, p.model, p.inventoryid, p.date)}>{p.date}</a></td>
+							<td><a href={modelHref(p.penEntityId)}>{p.model}</a></td>
+							<td class="mono"><a href={penHref(p.inventoryid)}>{p.inventoryid}</a></td>
+							<td class="mono"><a href={sessionHref(p.inventoryid, p.date)}>{p.date}</a></td>
 						</tr>
 					{/each}
 				</tbody>
@@ -231,8 +231,8 @@
 					{#each stale as p}
 						<tr>
 							<td>{p.brand}</td>
-							<td><a href={modelHref(p.brand, p.model)}>{p.model}</a></td>
-							<td class="mono"><a href={penHref(p.brand, p.model, p.inventoryid)}>{p.inventoryid}</a></td>
+							<td><a href={modelHref(p.penEntityId)}>{p.model}</a></td>
+							<td class="mono"><a href={penHref(p.inventoryid)}>{p.inventoryid}</a></td>
 							<td class="mono">{p.lastDate}</td>
 							<td class="num mono">{p.daysAgo}</td>
 						</tr>

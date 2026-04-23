@@ -1,71 +1,16 @@
-const STORAGE_KEY = "compareGroups";
+// V2 format: item values use lowercase inventory IDs (pen) or entity IDs (model/family).
+// Tag values are unchanged. Old V1 keys (compareGroups / compareSavedViews) are ignored —
+// users get a fresh slate after the URL/entity-ID refactor.
 
-function load() {
-	if (typeof window === "undefined") return [];
-	try {
-		const raw = localStorage.getItem(STORAGE_KEY);
-		return raw ? JSON.parse(raw) : [];
-	} catch {
-		return [];
-	}
-}
-
-function save(groups) {
-	if (typeof window !== "undefined") {
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(groups));
-	}
-}
-
-class CompareStore {
-	groups = $state(load());
-
-	addGroup(name) {
-		const id = `g_${Date.now()}`;
-		this.groups = [...this.groups, { id, name, items: [] }];
-		save(this.groups);
-		return id;
-	}
-
-	removeGroup(id) {
-		this.groups = this.groups.filter((g) => g.id !== id);
-		save(this.groups);
-	}
-
-	renameGroup(id, name) {
-		this.groups = this.groups.map((g) => (g.id === id ? { ...g, name } : g));
-		save(this.groups);
-	}
-
-	addItem(groupId, type, value) {
-		this.groups = this.groups.map((g) => {
-			if (g.id !== groupId) return g;
-			if (g.items.some((i) => i.type === type && i.value === value)) return g;
-			return { ...g, items: [...g.items, { type, value }] };
-		});
-		save(this.groups);
-	}
-
-	removeItem(groupId, type, value) {
-		this.groups = this.groups.map((g) => {
-			if (g.id !== groupId) return g;
-			return {
-				...g,
-				items: g.items.filter((i) => !(i.type === type && i.value === value)),
-			};
-		});
-		save(this.groups);
-	}
-
-	clearAll() {
-		this.groups = [];
-		save(this.groups);
-	}
-}
-
-export const compareStore = new CompareStore();
+import { familyEntityIdToFamilyId } from './data.js';
 
 /**
- * Resolve a group's items to a set of matching sessions.
+ * Resolve a group's items to a set of matching sessions, deduplicated by sessionId.
+ *
+ *   { type: "pen",    value: "wap.0004" }                       — lowercase inventory id
+ *   { type: "model",  value: "wacom.pen.kp504e" }               — pen EntityId
+ *   { type: "family", value: "wacom.penfamily.wacom_kpgen2" }   — family EntityId
+ *   { type: "tag",    value: "UDEMR" }                          — tag string (case-sensitive)
  */
 export function resolveGroupSessions(group, allSessions) {
 	const seen = new Set();
@@ -75,15 +20,14 @@ export function resolveGroupSessions(group, allSessions) {
 		for (const item of group.items) {
 			let match = false;
 			if (item.type === "pen") {
-				match = s.inventoryid === item.value;
+				match = s.inventoryid && s.inventoryid.toLowerCase() === item.value;
 			} else if (item.type === "model") {
-				match = `${s.brand}||${s.pen}` === item.value;
+				match = s.penEntityId === item.value;
 			} else if (item.type === "family") {
-				match = s.penfamily === item.value;
+				const familyId = familyEntityIdToFamilyId[item.value];
+				match = !!familyId && s.penfamily === familyId;
 			} else if (item.type === "tag") {
-				match =
-					s.tags.includes(item.value) ||
-					s.penDefTags.includes(item.value);
+				match = s.tags.includes(item.value) || s.penDefTags.includes(item.value);
 			}
 			if (match) {
 				seen.add(s.sessionId);

@@ -8,38 +8,30 @@
 	let flaggedCount = $derived(getFlaggedCount());
 
 	const tabs = [
-		{ label: "Pen Models", href: `${base}/models` },
-		{ label: "Pen Families", href: `${base}/families` },
+		{ label: "Pen Models", href: `${base}/penmodels` },
+		{ label: "Pen Families", href: `${base}/penfamilies` },
 		{ label: "Pens", href: `${base}/pens` },
 		{ label: "Sessions", href: `${base}/` },
 		{ label: "Flagged", href: `${base}/flagged` },
 		{ label: "Compare", href: `${base}/compare` },
-		{ label: "Data Quality", href: `${base}/data-quality` },
+		{ label: "Data Quality", href: `${base}/dataquality` },
 		{ label: "About", href: `${base}/about` },
 	];
 
 	function isActive(href) {
 		const path = $page.url.pathname;
 
-		// /details/ hierarchy — segment depth determines which tab is active
-		const detailsPrefix = `${base}/details/`;
-		if (path.startsWith(detailsPrefix)) {
-			const parts = path
-				.slice(detailsPrefix.length)
-				.split("/")
-				.filter(Boolean);
-			if (href === `${base}/models`) return parts.length === 2;
-			if (href === `${base}/pens`) return parts.length === 3;
-			if (href === `${base}/`) return parts.length === 4;
-			return false;
-		}
+		// Detail-page → which tab lights up
+		if (path.startsWith(`${base}/penmodel/`)) return href === `${base}/penmodels`;
+		if (path.startsWith(`${base}/penfamily/`)) return href === `${base}/penfamilies`;
+		if (path.startsWith(`${base}/inventorypen/`)) return href === `${base}/pens`;
+		if (path.startsWith(`${base}/session/`)) return href === `${base}/`;
 
-		// Standard listing paths
-		if (href === `${base}/`)
-			return path === `${base}/` || path.startsWith(`${base}/sessions`);
-		if (href === `${base}/pens`)
-			return path === `${base}/pens` || path.startsWith(`${base}/pens/`);
-		return path.startsWith(href);
+		// Sessions home: exact match on "/" only
+		if (href === `${base}/`) return path === `${base}/`;
+
+		// Standard listing paths: prefix match
+		return path === href || path.startsWith(`${href}/`);
 	}
 </script>
 

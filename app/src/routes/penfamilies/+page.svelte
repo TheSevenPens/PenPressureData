@@ -1,7 +1,6 @@
 <script>
 	import { base } from "$app/paths";
-	import { allSessions, penFamilies, familyInfoMap } from "$lib/data.js";
-	import BrandFilter from "$lib/components/BrandFilter.svelte";
+	import { allSessions, penFamilies, familyInfoMap, brands } from "$lib/data.js";
 	import FlagButton from "$lib/components/FlagButton.svelte";
 
 	const allFamilyRows = (() => {
@@ -12,6 +11,7 @@
 				const info = familyInfoMap[s.penfamily];
 				map[s.penfamily] = {
 					familyId: s.penfamily,
+					entityId: info?.entityId || "",
 					familyName: info?.familyName || s.penfamily,
 					brand: info?.brand || s.brand,
 					models: new Set(),
@@ -66,7 +66,15 @@
 
 <div class="families-page">
 	<div class="top-bar">
-		<BrandFilter bind:selectedBrand />
+		<label class="filter-label">
+			Brand:
+			<select class="filter-select" bind:value={selectedBrand}>
+				<option value="">All</option>
+				{#each brands as b}
+					<option value={b}>{b}</option>
+				{/each}
+			</select>
+		</label>
 		<span class="count"
 			>{filteredFamilies.length} famil{filteredFamilies.length !== 1 ? "ies" : "y"}</span
 		>
@@ -97,12 +105,12 @@
 							<tr>
 								<td>{f.brand}</td>
 								<td class="family-name">
-									<a href="{base}/families/{encodeURIComponent(f.familyId)}">{f.familyName}</a>
+									<a href="{base}/penfamily/{encodeURIComponent(f.entityId)}">{f.familyName}</a>
 								</td>
 								<td class="model-list">{f.modelNames.join(", ")}</td>
 								<td class="num">{f.pens}</td>
 								<td class="num">{f.sessions}</td>
-								<td class="flag-col"><FlagButton type="family" familyId={f.familyId} /></td>
+								<td class="flag-col"><FlagButton type="family" entityId={f.entityId} /></td>
 							</tr>
 						{/each}
 					</tbody>
@@ -122,6 +130,23 @@
 		align-items: center;
 		gap: 1.5rem;
 		margin-bottom: 1rem;
+	}
+
+	.filter-label {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.85rem;
+		color: #555;
+	}
+
+	.filter-select {
+		font-size: 0.85rem;
+		padding: 0.3rem 0.4rem;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+		cursor: pointer;
+		background: #fff;
 	}
 
 	.count {

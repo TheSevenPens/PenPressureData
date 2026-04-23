@@ -1,19 +1,19 @@
 <script>
 	import { base } from "$app/paths";
-	import { allSessions } from "$lib/data.js";
-	import BrandFilter from "$lib/components/BrandFilter.svelte";
-	import ModelFilter from "$lib/components/ModelFilter.svelte";
+	import { allSessions, penFamilies, familyInfoMap, brands } from "$lib/data.js";
 	import FlagButton from "$lib/components/FlagButton.svelte";
-	import { penFamilies } from "$lib/data.js";
 
 	const allModels = (() => {
 		const map = {};
 		for (const s of allSessions) {
-			const key = `${s.brand}||${s.pen}`;
+			const key = s.penEntityId || `${s.brand}||${s.pen}`;
 			if (!map[key]) {
 				map[key] = {
 					brand: s.brand,
 					model: s.pen,
+					penName: s.penName,
+					fullName: s.fullName,
+					penEntityId: s.penEntityId,
 					penfamily: s.penfamily,
 					pens: new Set(),
 					sessions: 0,
@@ -23,7 +23,15 @@
 			map[key].sessions++;
 		}
 		return Object.values(map)
-			.map(({ pens, ...rest }) => ({ ...rest, pens: pens.size }))
+			.map(({ pens, ...rest }) => {
+				const info = familyInfoMap[rest.penfamily];
+				return {
+					...rest,
+					pens: pens.size,
+					familyName: info?.familyName || "",
+					familyEntityId: info?.entityId || "",
+				};
+			})
 			.sort(
 				(a, b) =>
 					a.brand.localeCompare(b.brand) ||
@@ -56,6 +64,17 @@
 		penFamilies.filter((f) => !selectedBrand || f.brand === selectedBrand),
 	);
 
+	// Unique model names visible in the current brand filter, sorted alphabetically.
+	let availableModels = $derived(
+		(() => {
+			const seen = new Set();
+			for (const s of allSessions) {
+				if (!selectedBrand || s.brand === selectedBrand) seen.add(s.pen);
+			}
+			return [...seen].sort();
+		})(),
+	);
+
 	let filteredModels = $derived(
 		allModels
 			.filter(
@@ -74,6 +93,11 @@
 					diff =
 						a.model.localeCompare(b.model) ||
 						a.brand.localeCompare(b.brand);
+				} else if (sortBy === "family") {
+					diff =
+						a.familyName.localeCompare(b.familyName) ||
+						a.brand.localeCompare(b.brand) ||
+						a.model.localeCompare(b.model);
 				} else {
 					diff =
 						a.brand.localeCompare(b.brand) ||
@@ -89,12 +113,21 @@
 		<div class="sidebar">
 			<div class="filter-box">
 				<h3>Brand</h3>
-				<BrandFilter bind:selectedBrand onchange={onBrandChange} />
+				<select
+					class="filter-select"
+					bind:value={selectedBrand}
+					onchange={onBrandChange}
+				>
+					<option value="">All</option>
+					{#each brands as b}
+						<option value={b}>{b}</option>
+					{/each}
+				</select>
 			</div>
 			{#if availableFamilies.length > 0}
 				<div class="filter-box">
 					<h3>Pen Family</h3>
-					<select class="family-select" bind:value={selectedFamily}>
+					<select class="filter-select" bind:value={selectedFamily}>
 						<option value="">All</option>
 						{#each availableFamilies as f}
 							<option value={f.familyId}>{f.familyName}</option>
@@ -102,10 +135,17 @@
 					</select>
 				</div>
 			{/if}
-			<div class="filter-box">
-				<h3>Model</h3>
-				<ModelFilter bind:selectedModel {selectedBrand} />
-			</div>
+			{#if availableModels.length > 0}
+				<div class="filter-box">
+					<h3>Model</h3>
+					<select class="filter-select" bind:value={selectedModel}>
+						<option value="">All</option>
+						{#each availableModels as m}
+							<option value={m}>{m}</option>
+						{/each}
+					</select>
+				</div>
+			{/if}
 		</div>
 
 		<div class="main-column">
@@ -137,6 +177,14 @@
 									: "▲"}{/if}
 						</th>
 						<th
+							class="sortable"
+							onclick={() => toggleSort("family")}
+						>
+							Family {#if sortBy === "family"}{sortDesc
+									? "▼"
+									: "▲"}{/if}
+						</th>
+						<th
 							class="num sortable"
 							onclick={() => toggleSort("pens")}
 						>
@@ -159,17 +207,23 @@
 					{#each filteredModels as m}
 						<tr>
 							<td>{m.brand}</td>
-							<td>
+							<td class="model-cell">
 								<a
-									href="{base}/details/{encodeURIComponent(
-										m.brand,
-									)}/{encodeURIComponent(m.model)}"
-									>{m.model}</a
+									href="{base}/penmodel/{encodeURIComponent(m.penEntityId)}"
+									>{m.fullName}</a
 								>
+							</td>
+							<td class="family-cell">
+								{#if m.familyEntityId}
+									<a
+										href="{base}/penfamily/{encodeURIComponent(m.familyEntityId)}"
+										>{m.familyName}</a
+									>
+								{/if}
 							</td>
 							<td class="num">{m.pens}</td>
 							<td class="num">{m.sessions}</td>
-							<td class="flag-col"><FlagButton type="model" brand={m.brand} model={m.model} /></td>
+							<td class="flag-col"><FlagButton type="model" entityId={m.penEntityId} /></td>
 						</tr>
 					{/each}
 				</tbody>
@@ -180,7 +234,12 @@
 
 <style>
 	.models-page {
-		max-width: 700px;
+		max-width: 1050px;
+	}
+
+	.models-table tbody td.model-cell,
+	.models-table tbody td.family-cell {
+		white-space: nowrap;
 	}
 
 	.layout-grid {
@@ -265,13 +324,14 @@
 		text-align: right;
 	}
 
-	.family-select {
+	.filter-select {
 		width: 100%;
 		font-size: 0.85rem;
 		padding: 0.3rem 0.4rem;
 		border: 1px solid #ccc;
 		border-radius: 4px;
 		cursor: pointer;
+		background: #fff;
 	}
 
 	.flag-col {

@@ -1,8 +1,6 @@
 <script>
 	import { base } from "$app/paths";
-	import { allSessions } from "$lib/data.js";
-	import BrandFilter from "$lib/components/BrandFilter.svelte";
-	import ModelFilter from "$lib/components/ModelFilter.svelte";
+	import { allSessions, brands } from "$lib/data.js";
 
 	let selectedBrand = $state("");
 	let selectedModel = $state("");
@@ -14,6 +12,17 @@
 			if (selectedModel && s.pen !== selectedModel) return false;
 			return true;
 		}),
+	);
+
+	// Unique model names visible in the current brand filter, sorted alphabetically.
+	let availableModels = $derived(
+		(() => {
+			const seen = new Set();
+			for (const s of allSessions) {
+				if (!selectedBrand || s.brand === selectedBrand) seen.add(s.pen);
+			}
+			return [...seen].sort();
+		})(),
 	);
 
 	function onBrandChange() {
@@ -34,16 +43,32 @@
 	<div class="sidebar">
 		<div class="filter-box">
 			<h3>Brand</h3>
-			<BrandFilter bind:selectedBrand onchange={onBrandChange} />
+			<select
+				class="filter-select"
+				bind:value={selectedBrand}
+				onchange={onBrandChange}
+			>
+				<option value="">All</option>
+				{#each brands as b}
+					<option value={b}>{b}</option>
+				{/each}
+			</select>
 		</div>
-		<div class="filter-box">
-			<h3>Model</h3>
-			<ModelFilter
-				bind:selectedModel
-				{selectedBrand}
-				onchange={onModelChange}
-			/>
-		</div>
+		{#if availableModels.length > 0}
+			<div class="filter-box">
+				<h3>Model</h3>
+				<select
+					class="filter-select"
+					bind:value={selectedModel}
+					onchange={onModelChange}
+				>
+					<option value="">All</option>
+					{#each availableModels as m}
+						<option value={m}>{m}</option>
+					{/each}
+				</select>
+			</div>
+		{/if}
 	</div>
 
 	<div class="main-column">
@@ -77,39 +102,29 @@
 							onclick={() => toggleSession(session.sessionId)}
 						>
 							<td>{session.brand}</td>
-							<td>
+							<td class="model-cell">
 								<a
-									href="{base}/details/{encodeURIComponent(
-										session.brand,
-									)}/{encodeURIComponent(session.pen)}"
+									href="{base}/penmodel/{encodeURIComponent(session.penEntityId)}"
 									onclick={(e) => e.stopPropagation()}
 								>
-									{session.pen}
+									{session.fullName}
 								</a>
 							</td>
 							<td class="mono">
 								<a
-									href="{base}/details/{encodeURIComponent(
-										session.brand,
-									)}/{encodeURIComponent(
-										session.pen,
-									)}/{session.inventoryid}"
+									href="{base}/inventorypen/{encodeURIComponent(session.inventoryid.toLowerCase())}"
 									onclick={(e) => e.stopPropagation()}
 									>{session.inventoryid}</a
 								>
 							</td>
 							<td class="mono">
 								<a
-									href="{base}/details/{encodeURIComponent(
-										session.brand,
-									)}/{encodeURIComponent(
-										session.pen,
-									)}/{session.inventoryid}/{session.date}"
+									href="{base}/session/{encodeURIComponent(session.sessionId.toLowerCase())}"
 									onclick={(e) => e.stopPropagation()}
 									>{session.date}</a
 								>
 							</td>
-							<td>{session.tablet}</td>
+							<td>{session.tabletFullName}</td>
 							<td>{session.driver}</td>
 							<td class="num">{session.records.length}</td>
 						</tr>
@@ -191,6 +206,16 @@
 		color: #555;
 	}
 
+	.filter-select {
+		width: 100%;
+		font-size: 0.85rem;
+		padding: 0.3rem 0.4rem;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+		cursor: pointer;
+		background: #fff;
+	}
+
 	.controls {
 		display: flex;
 		align-items: center;
@@ -229,6 +254,10 @@
 		padding: 0.4rem 0.75rem;
 		border-bottom: 1px solid #eee;
 		vertical-align: top;
+	}
+
+	tbody td.model-cell {
+		white-space: nowrap;
 	}
 
 	.session-row {
