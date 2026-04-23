@@ -77,9 +77,9 @@
         <thead>
             <tr>
                 <th class="label-col">Mark</th>
-                <th class="num">Min (gf)</th>
-                <th class="num">Median (gf)</th>
-                <th class="num">Max (gf)</th>
+                <th class="num">Min<br /><span class="unit">(gf)</span></th>
+                <th class="num">Median<br /><span class="unit">(gf)</span></th>
+                <th class="num">Max<br /><span class="unit">(gf)</span></th>
             </tr>
         </thead>
         <tbody>
@@ -111,6 +111,7 @@
 <style>
     .stats-container {
         margin-bottom: 2rem;
+        max-width: 280px;
     }
 
     .stats-container h2 {
@@ -136,31 +137,38 @@
     .stats-table {
         border-collapse: collapse;
         width: auto;
-        min-width: 400px;
         font-size: 0.875rem;
     }
 
     .stats-table thead th {
         background: #f0f0f0;
-        padding: 0.4rem 1rem;
+        padding: 0.3rem 0.5rem;
         text-align: right;
         font-weight: 600;
         border-bottom: 2px solid #ddd;
         white-space: nowrap;
+        line-height: 1.15;
     }
 
     .stats-table thead th.label-col {
         text-align: left;
     }
 
+    .stats-table .unit {
+        font-weight: 400;
+        font-size: 0.7rem;
+        color: #999;
+    }
+
     .stats-table tbody td {
-        padding: 0.35rem 1rem;
+        padding: 0.3rem 0.5rem;
         border-bottom: 1px solid #eee;
     }
 
     .stats-table tbody td.label-col {
         text-align: left;
         color: #666;
+        padding-right: 0.75rem;
     }
 
     .num {
@@ -173,14 +181,13 @@
     }
 
     .excluded-note {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         color: #856404;
         background: #fff3cd;
         border: 1px solid #ffc107;
         border-radius: 4px;
-        padding: 0.5rem 0.75rem;
-        margin: 0.75rem 0 0 0;
-        max-width: 800px;
+        padding: 0.4rem 0.6rem;
+        margin: 0.6rem 0 0 0;
     }
 
     .warn-icon {
