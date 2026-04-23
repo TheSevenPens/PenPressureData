@@ -15,6 +15,15 @@
 	const stale = findStaleMeasurements(allSessions);
 	const recommended = findRecommendedForRemeasurement(allSessions);
 
+	const tabs = [
+		{ id: "recommended", label: "Recommended", count: recommended.length },
+		{ id: "monotonic", label: "Non-monotonic", count: nonMonotonic.length },
+		{ id: "lowend", label: "Missing low-end", count: missingLowEnd.length },
+		{ id: "single", label: "Single session", count: singleSession.length },
+		{ id: "stale", label: "Stale (>1yr)", count: stale.length },
+	];
+	let activeTab = $state("recommended");
+
 	function modelHref(brand, model) {
 		return `${base}/details/${encodeURIComponent(brand)}/${encodeURIComponent(model)}`;
 	}
@@ -33,7 +42,21 @@
 		items that warrant a closer look or a fresh measurement.
 	</p>
 
+	<div class="subtabs">
+		{#each tabs as t}
+			<button
+				class="subtab"
+				class:active={activeTab === t.id}
+				onclick={() => (activeTab = t.id)}
+			>
+				{t.label}
+				<span class="tab-count">({t.count})</span>
+			</button>
+		{/each}
+	</div>
+
 	<!-- Recommended for re-measurement (summary of pen-level issues) -->
+	{#if activeTab === "recommended"}
 	<section>
 		<h3>Recommended for re-measurement <span class="count">({recommended.length})</span></h3>
 		<p class="desc">
@@ -69,8 +92,10 @@
 			</table>
 		{/if}
 	</section>
+	{/if}
 
 	<!-- Non-monotonic sessions (#4) -->
+	{#if activeTab === "monotonic"}
 	<section>
 		<h3>Non-monotonic sessions <span class="count">({nonMonotonic.length})</span></h3>
 		<p class="desc">
@@ -105,8 +130,10 @@
 			</table>
 		{/if}
 	</section>
+	{/if}
 
 	<!-- Missing low-end measurements (#3) -->
+	{#if activeTab === "lowend"}
 	<section>
 		<h3>Missing low-end logical measurements <span class="count">({missingLowEnd.length})</span></h3>
 		<p class="desc">
@@ -141,8 +168,10 @@
 			</table>
 		{/if}
 	</section>
+	{/if}
 
 	<!-- Single session pens (#5) -->
+	{#if activeTab === "single"}
 	<section>
 		<h3>Pens with only one session <span class="count">({singleSession.length})</span></h3>
 		<p class="desc">
@@ -174,8 +203,10 @@
 			</table>
 		{/if}
 	</section>
+	{/if}
 
 	<!-- Stale pens (#6) -->
+	{#if activeTab === "stale"}
 	<section>
 		<h3>Not measured in over a year <span class="count">({stale.length})</span></h3>
 		<p class="desc">
@@ -210,6 +241,7 @@
 			</table>
 		{/if}
 	</section>
+	{/if}
 </div>
 
 <style>
@@ -232,6 +264,42 @@
 
 	section {
 		margin-bottom: 2.5rem;
+	}
+
+	.subtabs {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0;
+		border-bottom: 1px solid #ddd;
+		margin: 1rem 0 1.5rem 0;
+	}
+
+	.subtab {
+		background: none;
+		border: none;
+		padding: 0.55rem 1rem;
+		font-size: 0.85rem;
+		font-weight: 500;
+		color: #666;
+		cursor: pointer;
+		border-bottom: 2px solid transparent;
+		margin-bottom: -1px;
+		white-space: nowrap;
+	}
+
+	.subtab:hover {
+		color: #333;
+	}
+
+	.subtab.active {
+		color: #1a1a2e;
+		border-bottom-color: #e94560;
+	}
+
+	.tab-count {
+		color: #999;
+		font-weight: normal;
+		margin-left: 0.2rem;
 	}
 
 	h3 {
