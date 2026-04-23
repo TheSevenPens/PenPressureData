@@ -3,6 +3,7 @@
 	import { base } from "$app/paths";
 	import { allSessions, penFamilies, familyInfoMap, allKnownTags } from "$lib/data.js";
 	import { resolveGroupSessions, findOverlaps } from "$lib/compare.svelte.js";
+	import { getFlaggedPens, getFlaggedModels, getFlaggedFamilies } from "$lib/flagged.svelte.js";
 	import PressureChart from "$lib/components/PressureChart.svelte";
 	import ZoomSelect from "$lib/components/ZoomSelect.svelte";
 	import EstimatesSelect from "$lib/components/EstimatesSelect.svelte";
@@ -85,6 +86,107 @@
 		persist();
 	}
 	function clearAll() { groups = []; persist(); }
+
+	// ---- Empty-state accelerators ----
+
+	// Count of flagged items (drives banner visibility)
+	let flaggedCount = $derived(
+		getFlaggedPens().size + getFlaggedModels().size + getFlaggedFamilies().size,
+	);
+
+	function importFlagged() {
+		const newGroups = [];
+
+		// Each flagged family → its own group
+		for (const familyId of getFlaggedFamilies()) {
+			const info = familyInfoMap[familyId];
+			newGroups.push({
+				id: `g_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+				name: info?.familyName || familyId,
+				items: [{ type: "family", value: familyId }],
+				_addType: "model",
+				_addValue: "",
+			});
+		}
+
+		// Each flagged model → its own group
+		for (const key of getFlaggedModels()) {
+			const [brand, model] = key.split("||");
+			newGroups.push({
+				id: `g_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+				name: `${brand} / ${model}`,
+				items: [{ type: "model", value: key }],
+				_addType: "model",
+				_addValue: "",
+			});
+		}
+
+		// All flagged individual pens → single group
+		const pens = [...getFlaggedPens()];
+		if (pens.length > 0) {
+			newGroups.push({
+				id: `g_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+				name: "Individual pens",
+				items: pens.map((p) => ({ type: "pen", value: p })),
+				_addType: "model",
+				_addValue: "",
+			});
+		}
+
+		groups = [...groups, ...newGroups];
+		persist();
+	}
+
+	// Quick-start presets: each entry is { id, title, description, groups[] }
+	// groups[] entries omit IDs/transient state — filled in by applyQuickStart.
+	const quickStarts = [
+		{
+			id: "wacom-one-gens",
+			title: "Wacom One: Gen1 vs Gen2",
+			description: "Compare the two generations of Wacom One pens.",
+			groups: [
+				{ name: "Wacom One Gen1", items: [{ type: "family", value: "Wacom_OneGen1" }] },
+				{ name: "Wacom One Gen2", items: [{ type: "family", value: "Wacom_OneGen2" }] },
+			],
+		},
+		{
+			id: "wacom-kp-gens",
+			title: "Wacom KP generations",
+			description: "Trace the evolution of the Wacom KP pen series across three generations.",
+			groups: [
+				{ name: "KP GEN1", items: [{ type: "family", value: "Wacom_KPGEN1" }] },
+				{ name: "KP GEN2", items: [{ type: "family", value: "Wacom_KPGEN2" }] },
+				{ name: "KP GEN3", items: [{ type: "family", value: "Wacom_KPGEN3" }] },
+			],
+		},
+		{
+			id: "udemr-brands",
+			title: "UD-EMR pens across brands",
+			description: "Compare pens using the UD-EMR standard (Wacom One, Samsung S Pen, etc.), one group per brand.",
+			groups: [
+				{ name: "Wacom (UD-EMR)", items: [
+					{ type: "model", value: "WACOM||CP-913" },
+					{ type: "model", value: "WACOM||CP-923" },
+				]},
+				{ name: "Samsung (UD-EMR)", items: [
+					{ type: "model", value: "SAMSUNG||SPEN" },
+					{ type: "model", value: "SAMSUNG||SPENCREATOR" },
+				]},
+			],
+		},
+	];
+
+	function applyQuickStart(qs) {
+		const newGroups = qs.groups.map((g, i) => ({
+			id: `g_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 5)}`,
+			name: g.name,
+			items: [...g.items],
+			_addType: "model",
+			_addValue: "",
+		}));
+		groups = [...groups, ...newGroups];
+		persist();
+	}
 
 	let gSess = $derived(groups.map(g => ({ g, ss: resolveGroupSessions(g, allSessions) })));
 	let allMatch = $derived((() => { const seen = new Set(), r = []; for (const { ss } of gSess) for (const s of ss) if (!seen.has(s.sessionId)) { seen.add(s.sessionId); r.push(s); } return r; })());
@@ -201,7 +303,33 @@
 	{:else if groups.length > 0}
 		<p class="emsg">Add items to your groups to see pressure response data.</p>
 	{:else}
-		<div class="empty"><p>Create groups and add pens, models, families, or tags to compare.</p><p>Click <strong>+ Add group</strong> to get started.</p></div>
+		<div class="empty">
+			<p class="eheading">Nothing to compare yet.</p>
+
+			{#if flaggedCount > 0}
+				<div class="flagged-banner">
+					<div>
+						<strong>You have {flaggedCount} flagged item{flaggedCount === 1 ? "" : "s"}.</strong>
+						<span class="sub">Import them as groups to get started.</span>
+					</div>
+					<button class="impbtn" onclick={importFlagged}>Import my flagged items →</button>
+				</div>
+			{/if}
+
+			<p class="qs-heading">{flaggedCount > 0 ? "Or try" : "Try"} a quick start:</p>
+			<ul class="qs-list">
+				{#each quickStarts as qs}
+					<li>
+						<button class="qs-btn" onclick={() => applyQuickStart(qs)}>
+							<span class="qs-title">{qs.title}</span>
+							<span class="qs-desc">{qs.description}</span>
+						</button>
+					</li>
+				{/each}
+			</ul>
+
+			<p class="hint">You can also click <strong>+ Add group</strong> above to build a comparison from scratch.</p>
+		</div>
 	{/if}
 </div>
 
@@ -244,6 +372,32 @@
 	.chdr2 h2 { font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #888; margin: 0; }
 	.rsel, .esel { font-size: 0.8rem; color: #444; border: 1px solid #ccc; border-radius: 4px; padding: 0.2rem 0.4rem; cursor: pointer; }
 	.esel { margin-left: auto; }
-	.empty { text-align: center; padding: 3rem 1rem; color: #666; }
+	.empty { padding: 2rem 1rem; color: #555; max-width: 680px; margin: 0 auto; }
+	.eheading { font-size: 1rem; font-weight: 600; color: #1a1a2e; margin: 0 0 1rem 0; text-align: center; }
+
+	.flagged-banner {
+		display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+		background: #eef4ff; border: 1px solid #b9c9e8; border-radius: 6px;
+		padding: 0.9rem 1rem; margin-bottom: 1.5rem; font-size: 0.9rem;
+	}
+	.flagged-banner .sub { color: #666; margin-left: 0.4rem; }
+	.impbtn {
+		font-size: 0.85rem; color: #fff; background: #4a6fa5; border: none;
+		border-radius: 4px; padding: 0.45rem 0.9rem; cursor: pointer; white-space: nowrap;
+	}
+	.impbtn:hover { background: #3a5f95; }
+
+	.qs-heading { font-size: 0.85rem; color: #666; margin: 1rem 0 0.5rem 0; text-transform: uppercase; letter-spacing: 0.5px; }
+	.qs-list { list-style: none; padding: 0; margin: 0 0 1.5rem 0; display: flex; flex-direction: column; gap: 0.5rem; }
+	.qs-btn {
+		width: 100%; text-align: left; padding: 0.75rem 1rem;
+		background: #fcfcfc; border: 1px solid #ddd; border-radius: 6px; cursor: pointer;
+		display: flex; flex-direction: column; gap: 0.2rem;
+	}
+	.qs-btn:hover { background: #f5f5f5; border-color: #4a6fa5; }
+	.qs-title { font-size: 0.9rem; font-weight: 600; color: #1a1a2e; }
+	.qs-desc { font-size: 0.8rem; color: #666; }
+
+	.hint { font-size: 0.8rem; color: #888; text-align: center; margin: 1rem 0 0 0; }
 	.emsg { color: #666; font-size: 0.9rem; text-align: center; padding: 2rem 0; }
 </style>
