@@ -45,10 +45,11 @@ function parseTags(tags) {
 		.filter(Boolean);
 }
 
-// Build pen entity → family and tags lookups from pen definition files
+// Build pen entity → family, tags, and PenId lookups from pen definition files
 function buildPenLookups() {
 	const penEntityToFamily = {};
 	const penEntityToTags = {};
+	const penEntityToPenId = {};
 	for (const [, module] of Object.entries(penModules)) {
 		const data = module.default ?? module;
 		const pens = data.Pens ?? [];
@@ -58,6 +59,9 @@ function buildPenLookups() {
 			}
 			if (pen.EntityId && pen.Tags && pen.Tags.length > 0) {
 				penEntityToTags[pen.EntityId] = pen.Tags;
+			}
+			if (pen.EntityId && pen.PenId) {
+				penEntityToPenId[pen.EntityId] = pen.PenId;
 			}
 		}
 	}
@@ -75,10 +79,10 @@ function buildPenLookups() {
 		}
 	}
 
-	return { penEntityToFamily, penEntityToTags, familyInfoMap };
+	return { penEntityToFamily, penEntityToTags, penEntityToPenId, familyInfoMap };
 }
 
-const { penEntityToFamily, penEntityToTags, familyInfoMap } = buildPenLookups();
+const { penEntityToFamily, penEntityToTags, penEntityToPenId, familyInfoMap } = buildPenLookups();
 
 // Build inventory defects lookup: InventoryId → Defects[]
 function buildDefectsLookup() {
@@ -127,10 +131,15 @@ function buildData() {
 			// Look up defects from inventory
 			const defects = inventoryIdToDefects[raw.InventoryId] || [];
 
+			// Prefer canonical PenId from pen definitions (e.g. "PW100"); fall back
+			// to the trailing segment of PenEntityId (which is lowercase post-refactor).
+			const penId = (raw.PenEntityId && penEntityToPenId[raw.PenEntityId])
+				|| (raw.PenEntityId ? raw.PenEntityId.split('.').pop() : '');
+
 			// Map DrawTabData field names to the format the app expects
 			const mapped = {
 				brand: raw.Brand,
-				pen: raw.PenEntityId ? raw.PenEntityId.split('.').pop() : '',
+				pen: penId,
 				penEntityId: raw.PenEntityId || '',
 				penfamily: familyId,
 				inventoryid: raw.InventoryId,
