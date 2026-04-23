@@ -3,10 +3,12 @@
 
     /**
      * @type {{
-     *   sessions: Array<{ pValues: Record<string, number|null>, defects?: Array<{Kind: string, Notes: string}>, isDefective?: boolean, inventoryid?: string }>
+     *   sessions: Array<{ pValues: Record<string, number|null>, defects?: Array<{Kind: string, Notes: string}>, isDefective?: boolean, inventoryid?: string }>,
+     *   title?: string,
+     *   color?: string | null
      * }}
      */
-    let { sessions } = $props();
+    let { sessions, title = "Aggregated Stats", color = null } = $props();
 
     // Split into included (non-defective) and excluded (defective)
     let includedSessions = $derived(sessions.filter((s) => !s.isDefective));
@@ -67,7 +69,10 @@
 </script>
 
 <div class="stats-container">
-    <h2>Aggregated Stats</h2>
+    <h2>
+        {#if color}<span class="group-dot" style="background: {color}"></span>{/if}
+        {title}
+    </h2>
     <table class="stats-table">
         <thead>
             <tr>
@@ -115,6 +120,17 @@
         letter-spacing: 0.5px;
         color: #888;
         margin: 0 0 0.75rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .group-dot {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
+        flex-shrink: 0;
     }
 
     .stats-table {

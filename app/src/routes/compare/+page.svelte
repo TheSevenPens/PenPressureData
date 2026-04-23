@@ -331,7 +331,13 @@
 	{/if}
 
 	{#if allMatch.length > 0}
-		<ModelStats sessions={allMatch} />
+		<div class="stats-row">
+			{#each gSess as gs, gi (gs.g.id)}
+				{#if gs.ss.length > 0}
+					<ModelStats sessions={gs.ss} title={gs.g.name} color={COLORS[gi % COLORS.length]} />
+				{/if}
+			{/each}
+		</div>
 		<div class="chart-area">
 			<div class="chdr2">
 				<h2>Pressure Response</h2>
@@ -415,6 +421,8 @@
 	.addb { font-size: 0.75rem; padding: 0.2rem 0.5rem; border: 1px solid #4a6fa5; border-radius: 3px; background: #4a6fa5; color: #fff; cursor: pointer; }
 	.addb:disabled { opacity: 0.4; cursor: default; }
 	.addb:hover:not(:disabled) { background: #3a5f95; }
+	.stats-row { display: flex; flex-wrap: wrap; gap: 1.5rem 2rem; margin-bottom: 1.5rem; }
+	.stats-row :global(.stats-container) { margin-bottom: 0; }
 	.chart-area { height: 480px; display: flex; flex-direction: column; margin-bottom: 1.5rem; }
 	.chart-area :global(.chart-wrap) { flex: 1; }
 	.chdr2 { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem; }
