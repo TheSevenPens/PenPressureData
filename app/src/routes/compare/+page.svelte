@@ -389,7 +389,7 @@
 				chartLegend={gSess
 					.map((gs, gi) => ({ label: gs.g.name, color: COLORS[gi % COLORS.length], count: gs.ss.length }))
 					.filter((l) => l.count > 0)
-					.map(({ label, color }) => ({ label, color }))}
+					.map(({ label, color, count }) => ({ label: `${label} (${count})`, color }))}
 			/>
 		</div>
 		<ChartLegendTable series={allSeries} {hiddenLabels} {showEstimates} showBrand={true} showInventoryId={true} onToggleSeries={toggleS} />
