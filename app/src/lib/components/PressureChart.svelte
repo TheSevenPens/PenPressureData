@@ -23,8 +23,76 @@
 		Filler,
 	);
 
-	/** @type {{ series: Array<{ label: string, records: Array<[number, number]>, color: string, p00?: number|null, p100?: number|null, brand?: string, model?: string }>, zoomMode?: string, title?: string|null, envelopeMode?: boolean, envelopeGroups?: Array<{ key: string, label: string, color: string }> | null }} */
-	let { series, zoomMode = "normal", title = null, envelopeMode = false, envelopeGroups = null, envelopeRange = "minmax" } = $props();
+	/** @type {{ series: Array<{ label: string, records: Array<[number, number]>, color: string, p00?: number|null, p100?: number|null, brand?: string, model?: string }>, zoomMode?: string, title?: string|null, envelopeMode?: boolean, envelopeGroups?: Array<{ key: string, label: string, color: string }> | null, envelopeRange?: string, chartLegend?: Array<{ label: string, color: string }> | null }} */
+	let { series, zoomMode = "normal", title = null, envelopeMode = false, envelopeGroups = null, envelopeRange = "minmax", chartLegend = null } = $props();
+
+	// Custom Chart.js plugin that draws a legend box inside the plot area
+	// (bottom-right by default — pen data curves don't reach there).
+	// Registered once below; its items come from options.plugins.groupLegend.items
+	// set at buildChart time.
+	const groupLegendPlugin = {
+		id: "groupLegend",
+		afterDatasetsDraw(chart) {
+			const opts = chart.options.plugins && chart.options.plugins.groupLegend;
+			if (!opts || !opts.items || opts.items.length === 0) return;
+			const items = opts.items;
+			const ctx = chart.ctx;
+			const { right, bottom } = chart.chartArea;
+
+			const padding = 10;
+			const rowH = 18;
+			const swatch = 12;
+			const gap = 6;
+
+			ctx.save();
+			ctx.font = "12px 'Google Sans Flex', Arial, sans-serif";
+
+			let maxW = 0;
+			for (const it of items) {
+				const w = ctx.measureText(it.label).width;
+				if (w > maxW) maxW = w;
+			}
+			const boxW = padding * 2 + swatch + gap + maxW;
+			const boxH = padding * 2 + items.length * rowH - (items.length > 0 ? (rowH - swatch) : 0);
+
+			const boxX = right - boxW - 12;
+			const boxY = bottom - boxH - 12;
+			const r = 4;
+
+			// Rounded background
+			ctx.fillStyle = "rgba(255, 255, 255, 0.88)";
+			ctx.strokeStyle = "rgba(0, 0, 0, 0.15)";
+			ctx.lineWidth = 1;
+			ctx.beginPath();
+			ctx.moveTo(boxX + r, boxY);
+			ctx.lineTo(boxX + boxW - r, boxY);
+			ctx.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + r);
+			ctx.lineTo(boxX + boxW, boxY + boxH - r);
+			ctx.quadraticCurveTo(boxX + boxW, boxY + boxH, boxX + boxW - r, boxY + boxH);
+			ctx.lineTo(boxX + r, boxY + boxH);
+			ctx.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - r);
+			ctx.lineTo(boxX, boxY + r);
+			ctx.quadraticCurveTo(boxX, boxY, boxX + r, boxY);
+			ctx.closePath();
+			ctx.fill();
+			ctx.stroke();
+
+			// Legend items
+			ctx.textBaseline = "middle";
+			for (let i = 0; i < items.length; i++) {
+				const it = items[i];
+				const y = boxY + padding + i * rowH + rowH / 2 - rowH / 2 + swatch / 2;
+				const swatchY = boxY + padding + i * rowH;
+				ctx.fillStyle = it.color;
+				ctx.fillRect(boxX + padding, swatchY, swatch, swatch);
+				ctx.strokeStyle = "rgba(0,0,0,0.15)";
+				ctx.strokeRect(boxX + padding, swatchY, swatch, swatch);
+				ctx.fillStyle = "#1a1a2e";
+				ctx.fillText(it.label, boxX + padding + swatch + gap, swatchY + swatch / 2);
+			}
+			ctx.restore();
+		},
+	};
 
 	let canvas;
 	let chart;
@@ -290,6 +358,7 @@
 		chart = new Chart(canvas, {
 			type: "scatter",
 			data: { datasets },
+			plugins: [groupLegendPlugin],
 			options: {
 				responsive: true,
 				maintainAspectRatio: false,
@@ -331,6 +400,9 @@
 				},
 				plugins: {
 					legend: { display: false },
+					groupLegend: {
+						items: chartLegend || [],
+					},
 					title: {
 						display: title != null,
 						text: title ?? "",
@@ -500,6 +572,7 @@
 		envelopeMode;
 		envelopeGroups;
 		envelopeRange;
+		chartLegend;
 		if (canvas) buildChart();
 	});
 </script>

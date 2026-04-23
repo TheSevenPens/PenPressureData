@@ -378,7 +378,19 @@
 					{/if}
 				{/each}
 			</div>
-			<PressureChart bind:this={chartRef} series={visSeries} zoomMode={zoom} envelopeMode={showEstimates === "envelope"} envelopeGroups={envGroups} {envelopeRange} title={null} />
+			<PressureChart
+				bind:this={chartRef}
+				series={visSeries}
+				zoomMode={zoom}
+				envelopeMode={showEstimates === "envelope"}
+				envelopeGroups={envGroups}
+				{envelopeRange}
+				title={null}
+				chartLegend={gSess
+					.map((gs, gi) => ({ label: gs.g.name, color: COLORS[gi % COLORS.length], count: gs.ss.length }))
+					.filter((l) => l.count > 0)
+					.map(({ label, color }) => ({ label, color }))}
+			/>
 		</div>
 		<ChartLegendTable series={allSeries} {hiddenLabels} {showEstimates} showBrand={true} showInventoryId={true} onToggleSeries={toggleS} />
 	{:else if groups.length > 0}
