@@ -40,10 +40,10 @@ The data lives in a separate repository ([DrawTabData](https://github.com/TheSev
   "PressureResponse": [
     {
       "Brand": "WACOM",
-      "PenEntityId": "WACOM.PEN.KP501E",
+      "PenEntityId": "wacom.pen.kp501e",
       "InventoryId": "WAP.0030",
       "Date": "2025-03-25",
-      "TabletEntityId": "WACOM.TABLET.DTH134",
+      "TabletEntityId": "wacom.tablet.dth134",
       "Records": [[3.1, 0.14], [4.5, 2.46], ...]
     }
   ]
@@ -52,21 +52,33 @@ The data lives in a separate repository ([DrawTabData](https://github.com/TheSev
 
 Each `Records` entry is a pair: `[physical_force_gf, logical_pressure_pct]`.
 
+`PenEntityId` and `TabletEntityId` are lowercase DrawTabData entity IDs. `InventoryId` is uppercase (e.g. `WAP.0030`). The app lowercases inventory IDs when constructing URLs.
+
 ### 2. Data Ingestion (`app/src/lib/data.js`)
 
 Responsible for loading raw data from the DrawTabData submodule and converting it into the app's internal format:
 
 1. **Vite glob imports** load all relevant JSON files at build time:
    - `*-pressure-response.json` — session measurements
-   - `*-pens.json` — pen model definitions (for family and tag lookup)
+   - `*-pens.json` — pen model definitions (for family, tag, PenId and PenName lookup)
    - `*-pen-families.json` — pen family definitions
+   - `*-tablets.json` — tablet model definitions (for resolving `TabletEntityId` to a human-readable FullName)
    - `inventory/*-pens.json` — physical unit inventory (for defects)
    - `reference/defect-kinds.json` — controlled defect vocabulary
 2. **Field mapping** converts DrawTabData field names (e.g. `PenEntityId`, `InventoryId`, `TabletEntityId`) to app-internal names (e.g. `pen`, `inventoryid`, `tablet`)
-3. **Tag parsing** normalizes the `tags` field from CSV strings or arrays into a consistent array format
-4. **Defect attachment** looks up each session's inventory unit and attaches `defects` (array of `{Kind, Notes}`) and `isDefective` (boolean) to the session
+3. **Name enrichment** attaches pre-formatted display names to every session:
+   - `penName` — canonical PenName from pen definitions (may differ from PenId, e.g. `"S Pen"` vs `"SPEN"`)
+   - `fullName` — `"{Brand} {PenId}"` when PenName matches PenId, otherwise `"{Brand} {PenName} ({PenId})"` (mirrors DrawTabDataExplorer's computed FullName)
+   - `tabletFullName` — `"{Brand} {TabletName} ({TabletId})"` resolved from the tablet lookup, falling back to the raw entity ID when the tablet has no record
+4. **Tag parsing** normalizes the `tags` field from CSV strings or arrays into a consistent array format
+5. **Defect attachment** looks up each session's inventory unit and attaches `defects` (array of `{Kind, Notes}`) and `isDefective` (boolean) to the session
 
 The ingestion layer isolates the rest of the app from changes in the DrawTabData schema -- if field names change upstream, only the mapping in `data.js` needs updating.
+
+**Name-formatting helpers** (exported from `data.js` for reuse across components):
+- `BRAND_NAMES` — brand code → display name map (e.g. `WACOM` → `Wacom`, `XPPEN` → `XP-Pen`)
+- `brandName(id)` — safe lookup with fallback to the raw id
+- `fullPenName({ brand, penId, penName })` — formats a pen's FullName the same way DrawTabDataExplorer does
 
 ### 3. Data Analysis (`app/src/lib/`)
 
@@ -111,7 +123,7 @@ byBrand
                            └── allSessions[]
 ```
 
-Exports: `allSessions`, `byBrand`, `sessionById`, `brands`
+Exports: `allSessions`, `byBrand`, `sessionById`, `brands`, `penFamilies`, `familyInfoMap`, `familyEntityIdToFamilyId`, `familyIdToEntityId`, `inventoryIdToDefects`, `defectKindInfo`, `allKnownTags`, `BRAND_NAMES`, `brandName`, `fullPenName`
 
 ### 4. UI Components (`app/src/lib/components/`)
 
@@ -120,17 +132,16 @@ The app uses Svelte 5 with runes (`$state`, `$derived`, `$props`, `$bindable`) f
 | Component | Role |
 |-----------|------|
 | **PressureChart** | Chart.js scatter plot with zoom modes, extrapolation lines, envelope mode (min/max area + median), and 4 export methods (PNG copy/download, HTML table copy/download) |
-| **FlagButton** | Toggle button for flagging pens or models for comparison |
-| **ChartLegendTable** | Interactive legend with checkboxes to toggle session visibility; displays P-value statistics |
+| **FlagButton** | Toggle button for flagging a pen (by inventory ID), pen model (by entity ID), or pen family (by entity ID) |
+| **ChartLegendTable** | Interactive legend with checkboxes to toggle session visibility; displays P-value statistics and links to the pen model, inventory pen, and session detail pages |
 | **ModelStats** | Aggregated statistics table showing min/median/max across sessions for key P-values |
-| **BrandFilter** | Pill-button bar for selecting brands |
-| **ModelFilter** | Pill-button bar for selecting pen models (filtered by active brand) |
-| **PillList** | Reusable button group with an "All" option |
 | **BreadcrumbBar** | Hierarchical breadcrumb navigation with item counts |
 | **NavStrip** | Previous/next navigation between models |
 | **ZoomSelect** | Chart zoom mode selector: normal / IAF detail / max pressure detail |
 | **EstimatesSelect** | Data mode selector: raw / estimates (P00/P100) / standardized / envelope |
 | **RecordsTable** | Raw measurement data table |
+
+Filter UI on list pages (`/`, `/penmodels`, `/penfamilies`, `/pens`) uses inline native `<select>` dropdowns — the earlier `BrandFilter` / `ModelFilter` / `PillList` components have been retired.
 
 ### 5. Routing (`app/src/routes/`)
 
@@ -165,7 +176,7 @@ A reactive store using Svelte 5 runes that manages three sets of flagged items (
 
 Flagging a model includes all current and future sessions for that pen model. Flagging a family includes all pens in that family. Flagging a pen includes all sessions for that specific inventory ID. All three sets are persisted to localStorage.
 
-Flag buttons appear on the Models and Pens listing pages (as a column in each table row) and on model/pen detail page headers.
+Flag buttons appear on the Pen Models, Pen Families, and Pens listing pages (as a column in each table row) and on the corresponding detail page headers.
 
 ### 7. Build and Deployment
 

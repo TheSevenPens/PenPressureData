@@ -37,20 +37,26 @@ Sessions are identified by inventory ID (a unique physical pen unit) and date, a
 
 ## How the App Presents Data
 
-The app provides four main views for navigating the data:
+The app provides eight tabs for navigating the data:
 
 | View | What It Shows |
 |------|--------------|
 | **Sessions** | Every measurement session, filterable by brand and model |
-| **Models** | Pen models with counts of pens tested and sessions recorded |
+| **Pen Models** | Pen models with family, counts of pens tested, and sessions recorded |
+| **Pen Families** | Pen families (e.g. Wacom KP-GEN2) with member models and session counts |
 | **Pens** | Individual pen units (inventory IDs) with their session history |
-| **Flagged** | User-selected pens and models for ad-hoc comparison |
+| **Flagged** | User-selected pens, models, and families for quick-access comparison |
+| **Compare** | Ad-hoc group-based comparison with saved views, overlap detection, and quick-start presets |
+| **Data Quality** | Automated checks: non-monotonic sessions, missing low-end data, single-session pens, stale measurements, and pens recommended for re-measurement |
+| **About** | Project background and links |
 
-Drilling into any entry leads to detail pages with interactive pressure response charts, statistical summaries, and raw data tables.
+Drilling into any entry leads to detail pages with interactive pressure response charts, statistical summaries, and raw data tables. Detail-page URLs use lowercase DrawTabData entity IDs (e.g. `/penmodel/wacom.pen.kp504e`, `/penfamily/wacom.penfamily.wacom_kpgen2`, `/inventorypen/wap.0004`, `/session/wap.0004_2024-09-02`).
 
 ### Flagging and Comparison
 
-Users can flag individual pens or entire pen models from any listing or detail page. Flagged items appear together on the Flagged tab, allowing pressure response comparison across arbitrary combinations of pens and models -- even across different brands. Flags persist in the browser via localStorage.
+Users can flag individual pens, entire pen models, or whole pen families from any listing or detail page. Flagged items appear together on the Flagged tab, allowing pressure response comparison across arbitrary combinations -- even across different brands. Flags persist in the browser via localStorage.
+
+The separate **Compare** tab supports more structured comparisons: users build named groups (each containing any mix of pens, models, families, and tags), and the page renders one color per group with overlap warnings, per-group statistics, and saved named views.
 
 ### Chart Features
 
