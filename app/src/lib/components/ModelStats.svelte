@@ -5,10 +5,11 @@
      * @type {{
      *   sessions: Array<{ pValues: Record<string, number|null>, defects?: Array<{Kind: string, Notes: string}>, isDefective?: boolean, inventoryid?: string }>,
      *   title?: string,
-     *   color?: string | null
+     *   color?: string | null,
+     *   showExcludedNote?: boolean
      * }}
      */
-    let { sessions, title = "Aggregated Stats", color = null } = $props();
+    let { sessions, title = "Aggregated Stats", color = null, showExcludedNote = true } = $props();
 
     // Split into included (non-defective) and excluded (defective)
     let includedSessions = $derived(sessions.filter((s) => !s.isDefective));
@@ -95,7 +96,7 @@
         </tbody>
     </table>
 
-    {#if excludedPens.length > 0}
+    {#if showExcludedNote && excludedPens.length > 0}
         <p class="excluded-note">
             <span class="warn-icon">&#9888;</span>
             Excluding {excludedPens.length} defective pen{excludedPens.length !== 1 ? "s" : ""}:

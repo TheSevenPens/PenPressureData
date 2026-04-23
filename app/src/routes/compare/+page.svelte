@@ -334,10 +334,25 @@
 		<div class="stats-row">
 			{#each gSess as gs, gi (gs.g.id)}
 				{#if gs.ss.length > 0}
-					<ModelStats sessions={gs.ss} title={gs.g.name} color={COLORS[gi % COLORS.length]} />
+					<ModelStats sessions={gs.ss} title={gs.g.name} color={COLORS[gi % COLORS.length]} showExcludedNote={false} />
 				{/if}
 			{/each}
 		</div>
+		{#if gSess.some((gs) => gs.ss.some((s) => s.isDefective))}
+			<p class="dq-note">
+				<span class="wi">&#9888;</span>
+				Aggregate stats exclude defective pens:
+				{#each gSess as gs}
+					{@const defective = [...new Map(gs.ss.filter((s) => s.isDefective).map((s) => [s.inventoryid, s])).values()]}
+					{#if defective.length > 0}
+						<span class="dq-group"><span class="dq-gname" style="color: {COLORS[gSess.indexOf(gs) % COLORS.length]}">{gs.g.name}:</span>
+						{#each defective as s, i}
+							<span class="dq-pen">{s.inventoryid} ({(s.defects || []).map((d) => d.Kind).join(", ")})</span>{#if i < defective.length - 1}, {/if}
+						{/each}</span>
+					{/if}
+				{/each}
+			</p>
+		{/if}
 		<div class="chart-area">
 			<div class="chdr2">
 				<h2>Pressure Response</h2>
@@ -421,8 +436,17 @@
 	.addb { font-size: 0.75rem; padding: 0.2rem 0.5rem; border: 1px solid #4a6fa5; border-radius: 3px; background: #4a6fa5; color: #fff; cursor: pointer; }
 	.addb:disabled { opacity: 0.4; cursor: default; }
 	.addb:hover:not(:disabled) { background: #3a5f95; }
-	.stats-row { display: flex; flex-wrap: wrap; gap: 1.5rem 2rem; margin-bottom: 1.5rem; }
+	.stats-row { display: flex; flex-wrap: wrap; gap: 1.5rem 2rem; margin-bottom: 1rem; }
 	.stats-row :global(.stats-container) { margin-bottom: 0; }
+	.dq-note {
+		font-size: 0.8rem; color: #856404;
+		background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px;
+		padding: 0.5rem 0.75rem; margin: 0 0 1.5rem 0;
+	}
+	.dq-note .wi { margin-right: 0.4rem; }
+	.dq-group { margin-right: 0.75rem; display: inline; }
+	.dq-gname { font-weight: 600; margin-right: 0.3rem; }
+	.dq-pen { font-family: monospace; font-size: 0.75rem; }
 	.chart-area { height: 480px; display: flex; flex-direction: column; margin-bottom: 1.5rem; }
 	.chart-area :global(.chart-wrap) { flex: 1; }
 	.chdr2 { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem; }
