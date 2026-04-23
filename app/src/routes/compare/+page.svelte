@@ -28,8 +28,44 @@
 	let defaultsApplied = $state(false);
 
 	const SK = "compareGroups";
-	onMount(() => { try { const r = localStorage.getItem(SK); if (r) { const parsed = JSON.parse(r); groups = parsed.map(g => ({ ...g, _addType: "model", _addValue: "" })); } } catch {} });
+	const SK_SAVED = "compareSavedViews"; // { [name]: groups[] }
+	let savedViews = $state({}); // name -> groups[]
+
+	onMount(() => {
+		try { const r = localStorage.getItem(SK); if (r) { const parsed = JSON.parse(r); groups = parsed.map(g => ({ ...g, _addType: "model", _addValue: "" })); } } catch {}
+		try { const r = localStorage.getItem(SK_SAVED); if (r) savedViews = JSON.parse(r); } catch {}
+	});
 	function persist() { if (typeof window !== "undefined") localStorage.setItem(SK, JSON.stringify(groups.map(({ _addType, _addValue, ...rest }) => rest))); }
+	function persistSaved() { if (typeof window !== "undefined") localStorage.setItem(SK_SAVED, JSON.stringify(savedViews)); }
+
+	function saveCurrentView() {
+		const name = (typeof window !== "undefined" ? window.prompt("Name this comparison view:", "") : null);
+		if (!name) return;
+		const trimmed = name.trim();
+		if (!trimmed) return;
+		if (savedViews[trimmed] && !window.confirm(`Overwrite existing saved view "${trimmed}"?`)) return;
+		// Snapshot current groups (strip transient UI state)
+		const snapshot = groups.map(({ _addType, _addValue, ...rest }) => ({ ...rest, items: [...rest.items] }));
+		savedViews = { ...savedViews, [trimmed]: snapshot };
+		persistSaved();
+	}
+
+	function loadSavedView(name) {
+		const snap = savedViews[name];
+		if (!snap) return;
+		groups = snap.map(g => ({ ...g, items: [...g.items], _addType: "model", _addValue: "" }));
+		persist();
+	}
+
+	function deleteSavedView(name) {
+		if (!window.confirm(`Delete saved view "${name}"?`)) return;
+		const next = { ...savedViews };
+		delete next[name];
+		savedViews = next;
+		persistSaved();
+	}
+
+	let savedViewNames = $derived(Object.keys(savedViews).sort((a, b) => a.localeCompare(b)));
 
 	function addGroup() { groups = [...groups, { id: `g_${Date.now()}`, name: `Group ${groups.length + 1}`, items: [], _addType: "model", _addValue: "" }]; persist(); }
 	function rmGroup(id) { groups = groups.filter(g => g.id !== id); persist(); }
@@ -86,6 +122,23 @@
 		<h2>Compare</h2>
 		<div class="acts">
 			<button class="abtn" onclick={addGroup}>+ Add group</button>
+			{#if groups.length > 0}
+				<button class="sbtn" onclick={saveCurrentView}>Save as…</button>
+			{/if}
+			{#if savedViewNames.length > 0}
+				<select class="lsel" onchange={(e) => { const v = e.currentTarget.value; e.currentTarget.value = ""; if (v) loadSavedView(v); }}>
+					<option value="">Load saved view…</option>
+					{#each savedViewNames as name}
+						<option value={name}>{name}</option>
+					{/each}
+				</select>
+				<select class="lsel" onchange={(e) => { const v = e.currentTarget.value; e.currentTarget.value = ""; if (v) deleteSavedView(v); }}>
+					<option value="">Delete saved view…</option>
+					{#each savedViewNames as name}
+						<option value={name}>{name}</option>
+					{/each}
+				</select>
+			{/if}
 			{#if groups.length > 0}<button class="cbtn" onclick={clearAll}>Clear all</button>{/if}
 		</div>
 	</div>
@@ -161,6 +214,9 @@
 	.abtn:hover { background: #3a5f95; }
 	.cbtn { font-size: 0.8rem; color: #e94560; background: none; border: 1px solid #e94560; border-radius: 4px; padding: 0.3rem 0.75rem; cursor: pointer; }
 	.cbtn:hover { background: #e94560; color: #fff; }
+	.sbtn { font-size: 0.8rem; color: #4a6fa5; background: #fff; border: 1px solid #4a6fa5; border-radius: 4px; padding: 0.3rem 0.75rem; cursor: pointer; }
+	.sbtn:hover { background: #4a6fa5; color: #fff; }
+	.lsel { font-size: 0.8rem; color: #444; border: 1px solid #ccc; border-radius: 4px; padding: 0.3rem 0.5rem; cursor: pointer; }
 	.warn { background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 0.5rem 0.75rem; font-size: 0.8rem; color: #856404; margin-bottom: 1rem; }
 	.cards { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
 	.card { flex: 1; min-width: 280px; max-width: 450px; border: 1px solid #ddd; border-left: 4px solid; border-radius: 6px; padding: 0.75rem; background: #fcfcfc; }

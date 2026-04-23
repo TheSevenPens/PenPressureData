@@ -14,6 +14,8 @@
 		{ label: "Sessions", href: `${base}/` },
 		{ label: "Flagged", href: `${base}/flagged` },
 		{ label: "Compare", href: `${base}/compare` },
+		{ label: "Data Quality", href: `${base}/data-quality` },
+		{ label: "About", href: `${base}/about` },
 	];
 
 	function isActive(href) {
@@ -66,8 +68,8 @@
 	}
 
 	header {
-		background: #1a1a2e;
-		color: #e0e0e0;
+		background: #f5f5f5;
+		color: #1a1a2e;
 		padding: 0.75rem 1.5rem;
 		border-bottom: 2px solid #e94560;
 	}
