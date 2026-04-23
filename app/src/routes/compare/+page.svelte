@@ -174,6 +174,55 @@
 				]},
 			],
 		},
+		{
+			id: "flagship-brands",
+			title: "Flagships: Wacom KP GEN2 vs Huion PW600 vs XP-Pen X3 Pro",
+			description: "Compare three top-tier pen series across Wacom, Huion, and XP-Pen.",
+			groups: [
+				{ name: "Wacom KP GEN2", items: [{ type: "family", value: "Wacom_KPGEN2" }] },
+				{ name: "Huion PW600 series", items: [{ type: "family", value: "Huion_PW600" }] },
+				{ name: "XP-Pen X3 Pro series", items: [{ type: "family", value: "XPPen_X3Pro" }] },
+			],
+		},
+		{
+			id: "xppen-x3pro-vs-elite",
+			title: "XP-Pen X3 Pro series vs X3 Elite",
+			description: "Compare the X3 Pro family against the standalone X3 Elite model.",
+			groups: [
+				{ name: "X3 Pro series", items: [{ type: "family", value: "XPPen_X3Pro" }] },
+				{ name: "X3 Elite", items: [{ type: "model", value: "XPPEN||X3ELITE" }] },
+			],
+		},
+		{
+			id: "huion-pw517-vs-pw550",
+			title: "Huion PW517 vs PW550 series",
+			description: "Compare the Huion PW517 model against the PW550 family.",
+			groups: [
+				{ name: "PW517", items: [{ type: "model", value: "HUION||PW517" }] },
+				{ name: "PW550 series", items: [{ type: "family", value: "Huion_PW550" }] },
+			],
+		},
+		{
+			id: "huion-pw600-vs-pw550",
+			title: "Huion PW600 series vs PW550 series",
+			description: "Compare the two recent Huion pen series head-to-head.",
+			groups: [
+				{ name: "PW600 series", items: [{ type: "family", value: "Huion_PW600" }] },
+				{ name: "PW550 series", items: [{ type: "family", value: "Huion_PW550" }] },
+			],
+		},
+		{
+			id: "xencelabs-v2-vs-x3pro",
+			title: "Xencelabs V2 series vs XP-Pen X3 Pro series",
+			description: "Compare Xencelabs V2 pens (3-Button V2 and Thin V2) against the XP-Pen X3 Pro family.",
+			groups: [
+				{ name: "Xencelabs V2 series", items: [
+					{ type: "model", value: "XENCELABS||3BUTTONV2" },
+					{ type: "model", value: "XENCELABS||THINV2" },
+				]},
+				{ name: "XP-Pen X3 Pro series", items: [{ type: "family", value: "XPPen_X3Pro" }] },
+			],
+		},
 	];
 
 	function applyQuickStart(qs) {
