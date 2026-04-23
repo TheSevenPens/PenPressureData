@@ -51,8 +51,10 @@
 		</li>
 		<li>
 			<strong>DrawTabData online explorer:</strong>
-			<!-- TODO: Add link to the DrawTabData online explorer once URL is known -->
-			<em>(coming soon)</em>
+			<a href="https://thesevenpens.github.io/DrawTabDataExplorer/" target="_blank" rel="noreferrer">
+				thesevenpens.github.io/DrawTabDataExplorer
+			</a>
+			— browse the unified data set for drawing tablets and pens.
 		</li>
 	</ul>
 
