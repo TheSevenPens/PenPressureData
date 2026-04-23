@@ -367,7 +367,18 @@
 					<option value="">Export &#x25BE;</option><option value="copy-chart">Copy chart</option><option value="export-png">Export chart as PNG</option><option value="copy-data">Copy data</option><option value="export-data">Export chart data</option>
 				</select>
 			</div>
-			<PressureChart bind:this={chartRef} series={visSeries} zoomMode={zoom} envelopeMode={showEstimates === "envelope"} envelopeGroups={envGroups} {envelopeRange} title="Compare" />
+			<div class="group-legend">
+				{#each gSess as gs, gi (gs.g.id)}
+					{#if gs.ss.length > 0}
+						<span class="gl-item">
+							<span class="gl-dot" style="background: {COLORS[gi % COLORS.length]}"></span>
+							<span class="gl-name">{gs.g.name}</span>
+							<span class="gl-count">({gs.ss.length})</span>
+						</span>
+					{/if}
+				{/each}
+			</div>
+			<PressureChart bind:this={chartRef} series={visSeries} zoomMode={zoom} envelopeMode={showEstimates === "envelope"} envelopeGroups={envGroups} {envelopeRange} title={null} />
 		</div>
 		<ChartLegendTable series={allSeries} {hiddenLabels} {showEstimates} showBrand={true} showInventoryId={true} onToggleSeries={toggleS} />
 	{:else if groups.length > 0}
@@ -447,7 +458,15 @@
 	.dq-group { margin-right: 0.75rem; display: inline; }
 	.dq-gname { font-weight: 600; margin-right: 0.3rem; }
 	.dq-pen { font-family: monospace; font-size: 0.75rem; }
-	.chart-area { height: 480px; display: flex; flex-direction: column; margin-bottom: 1.5rem; }
+	.chart-area { height: 520px; display: flex; flex-direction: column; margin-bottom: 1.5rem; }
+	.group-legend {
+		display: flex; flex-wrap: wrap; gap: 0.3rem 1.25rem;
+		justify-content: center; padding: 0.4rem 0.75rem; margin-bottom: 0.25rem;
+	}
+	.gl-item { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; }
+	.gl-dot { width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0; }
+	.gl-name { color: #1a1a2e; font-weight: 500; }
+	.gl-count { color: #888; font-size: 0.75rem; }
 	.chart-area :global(.chart-wrap) { flex: 1; }
 	.chdr2 { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem; }
 	.chdr2 h2 { font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #888; margin: 0; }
