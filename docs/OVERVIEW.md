@@ -1,5 +1,11 @@
 # PenPressureData - Project Overview
 
+> **⚠ Mostly superseded** — pressure-response viewing has moved to
+> [DrawTabDataExplorer ▸ Pens ▸ Pressure Response](https://thesevenpens.github.io/DrawTabDataExplorer/pressure-response).
+> This site remains live for the **Compare with named groups**
+> workflow (the only feature not yet ported). See the project
+> [README](../README.md) for the full parity comparison.
+
 ## What This Project Is
 
 PenPressureData is a web application that visualizes and analyzes pen pressure response data for EMR (Electromagnetic Resonance) styluses across multiple brands and models. It answers the question: **how does physical force on a pen tip translate into logical pressure values reported to the computer?**

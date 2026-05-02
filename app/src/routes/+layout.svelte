@@ -51,6 +51,13 @@
 </nav>
 
 <main>
+	<div class="deprecation-banner" role="alert">
+		<strong>⚠ Mostly superseded by the Explorer.</strong>
+		The pressure-response features of this site have moved to
+		<a href="https://thesevenpens.github.io/DrawTabDataExplorer/pressure-response" target="_blank" rel="noopener">
+			DrawTabDataExplorer ▸ Pens ▸ Pressure Response</a>.
+		This site stays live for the <strong>Compare with named groups</strong> workflow, which the Explorer doesn't have yet.
+	</div>
 	{@render children()}
 </main>
 
@@ -116,5 +123,24 @@
 		padding: 1.5rem;
 		max-width: 1400px;
 		margin: 0 auto;
+	}
+
+	.deprecation-banner {
+		background: #fff3cd;
+		border: 1px solid #d97706;
+		border-left: 6px solid #d97706;
+		color: #533f03;
+		padding: 14px 18px;
+		margin-bottom: 24px;
+		border-radius: 4px;
+		font-size: 14px;
+		line-height: 1.5;
+	}
+	.deprecation-banner strong {
+		color: #b45309;
+	}
+	.deprecation-banner a {
+		color: #1d4ed8;
+		font-weight: 600;
 	}
 </style>
